@@ -4,5 +4,5 @@ version = "0.1.0"
 authors = ["Andy Grove <andygrove73@gmail.com>"]
 
 [dependencies]
-datafusion = "*"
+datafusion = "0.1.7"
 #datafusion = { path = "/home/andy/git/datafusion-rs" }

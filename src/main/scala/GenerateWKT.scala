@@ -1,27 +1,28 @@
 
 import java.io.{File, FileOutputStream}
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import SortLocations.os
+import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 
-object SparkJob1 {
+object GenerateWKT {
 
   val os = new FileOutputStream(new File(s"progress_${System.currentTimeMillis()}.log"));
 
 
   def main(arg: Array[String]): Unit = {
 //    runJob(100000)
-    runJob(10)
-    runJob(100)
-    runJob(1000)
-    runJob(10000)
-    runJob(100000)
-    runJob(1000000)
-    runJob(10000000)
-    runJob(100000000)
-    runJob(1000000000)
+    generateWkt(10)
+    generateWkt(100)
+    generateWkt(1000)
+    generateWkt(10000)
+    generateWkt(100000)
+    generateWkt(1000000)
+    generateWkt(10000000)
+    generateWkt(100000000)
+    generateWkt(1000000000)
   }
 
-  def runJob(n: Long) {
+  def generateWkt(n: Long) {
 
     os.write(s"Processing $n locations ...\n".getBytes())
     os.flush()
@@ -30,14 +31,17 @@ object SparkJob1 {
 
     val spark = SparkSession.builder
       .appName("Simple Application")
-        .enableHiveSupport()
       .master("local[1]")
       .getOrCreate()
 
-    val path = "/home/andy/Documents/bigdata/"
+    val path = "/tmp/"
 
     spark.udf.register("ST_Point", (x: Double, y: Double) => Point(x,y))
-    spark.udf.register("ST_AsText", (p:Point) => s"POINT (${p.x}, ${p.y})")
+    spark.udf.register("ST_AsText", (row: Row) => {
+      val lat = row.getAs[Double](0)
+      val lon = row.getAs[Double](1)
+      s"POINT ($lat $lon)"
+    })
 
     val df: DataFrame = spark.read.csv(path + s"locations_$n.csv")
       .withColumnRenamed("_c0", "id")
@@ -49,12 +53,14 @@ object SparkJob1 {
 
     // create WKT for each point
     val df2 = spark.sql("SELECT ST_AsText(ST_Point(lat, lng)) FROM locations")
-    df2.printSchema()
 
     // write output
-    df2.write.csv("temp" + System.currentTimeMillis() + ".csv")
+    df2.write.mode(SaveMode.Overwrite).csv(s"/tmp/spark-generateWkt-$n.csv")
 
-    os.write(s"Processed $n locations in ${(System.currentTimeMillis()-now)/1000.0} seconds\n".getBytes())
+    val duration = (System.currentTimeMillis()-now)/1000.0
+    val rowsPerSecond = n / duration
+
+    os.write(s"Processed $n locations in $duration seconds ($rowsPerSecond rows per second\n)".getBytes())
     os.flush()
 
   }

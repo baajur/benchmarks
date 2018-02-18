@@ -1,4 +1,4 @@
-# datafusion-benchmarks
+# DataFusion Benchmarks
 
 Benchmarks comparing the performance of DataFusion with Apache Spark.
 
