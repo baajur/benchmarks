@@ -28,7 +28,7 @@ fn generate_wkt(n: u32) {
     let now = Instant::now();
 
     // create execution context
-    let mut ctx = ExecutionContext::new("./test/data".to_string());
+    let mut ctx = ExecutionContext::new("/tmp".to_string());
 
     // define schemas for test data
     ctx.define_schema(&format!("locations_{}", n),&Schema::new(vec![

@@ -21,7 +21,7 @@ object DataGenerator {
     println(s"Generating $n locations ...")
     val t1 = System.currentTimeMillis()
     val r = scala.util.Random
-    val os = new BufferedOutputStream(new FileOutputStream(new File(s"/home/andy/Documents/bigdata/locations_$n.csv")))
+    val os = new BufferedOutputStream(new FileOutputStream(new File(s"/tmp/locations_$n.csv")))
 
     var i : Long = 0
     while (i < n) {

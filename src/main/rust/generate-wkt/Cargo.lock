@@ -195,6 +195,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "generate-wkt"
+version = "0.1.0"
+dependencies = [
+ "datafusion 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "httparse"
 version = "1.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -260,13 +267,6 @@ dependencies = [
 name = "itoa"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "job1"
-version = "0.1.0"
-dependencies = [
- "datafusion 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "kernel32-sys"
