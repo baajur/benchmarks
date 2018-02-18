@@ -1,7 +1,0 @@
-[package]
-name = "job1"
-version = "0.1.0"
-authors = ["Andy Grove <andygrove73@gmail.com>"]
-
-[dependencies]
-datafusion = { path = "/home/andy/git/datafusion-rs" }

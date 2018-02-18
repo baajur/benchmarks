@@ -9,13 +9,14 @@ object SparkJob1 {
 
 
   def main(arg: Array[String]): Unit = {
+//    runJob(100000)
     runJob(10)
     runJob(100)
     runJob(1000)
     runJob(10000)
-//    runJob(100000)
-//    runJob(1000000)
-//    runJob(10000000)
+    runJob(100000)
+    runJob(1000000)
+    runJob(10000000)
     runJob(100000000)
     runJob(1000000000)
   }
@@ -33,15 +34,10 @@ object SparkJob1 {
       .master("local[1]")
       .getOrCreate()
 
-    try {
-      spark.sql("""create temporary function st_point as 'com.esri.hadoop.hive.ST_Point'""")
-      spark.sql("""create temporary function st_astext as 'com.esri.hadoop.hive.ST_AsText'""")
-    } catch {
-      // already exist
-      case e: Exception => println(e.getMessage)
-    }
-
     val path = "/home/andy/Documents/bigdata/"
+
+    spark.udf.register("ST_Point", (x: Double, y: Double) => Point(x,y))
+    spark.udf.register("ST_AsText", (p:Point) => s"POINT (${p.x}, ${p.y})")
 
     val df: DataFrame = spark.read.csv(path + s"locations_$n.csv")
       .withColumnRenamed("_c0", "id")
@@ -58,7 +54,7 @@ object SparkJob1 {
     // write output
     df2.write.csv("temp" + System.currentTimeMillis() + ".csv")
 
-    os.write(s"Processed $n locations in ${(System.currentTimeMillis()-now)/1000} seconds\n".getBytes())
+    os.write(s"Processed $n locations in ${(System.currentTimeMillis()-now)/1000.0} seconds\n".getBytes())
     os.flush()
 
   }
@@ -66,3 +62,6 @@ object SparkJob1 {
 
 
 }
+
+
+case class Point(x: Double, y: Double)

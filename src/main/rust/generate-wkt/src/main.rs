@@ -8,34 +8,34 @@ use datafusion::exec::*;
 use datafusion::functions::geospatial::*;
 
 fn main() {
-    run_job(10);
-    run_job(100);
-    run_job(1000);
-    run_job(10000);
-    run_job(100000);
-    run_job(1000000);
-    run_job(10000000);
-    run_job(100000000);
-    run_job(1000000000);
+    generate_wkt(10);
+    generate_wkt(100);
+    generate_wkt(1000);
+    generate_wkt(10000);
+    generate_wkt(100000);
+    generate_wkt(1000000);
+    generate_wkt(10000000);
+    generate_wkt(100000000);
+
+
+//    run_job_2(1000000000);
 }
 
-fn run_job(n: u32) {
+fn generate_wkt(n: u32) {
 
     println!("Running job for {} locations", n);
 
     let now = Instant::now();
 
-    // create a schema registry
-    let mut schemas : HashMap<String, Schema> = HashMap::new();
+    // create execution context
+    let mut ctx = ExecutionContext::new("./test/data".to_string());
 
     // define schemas for test data
-    schemas.insert(format!("locations_{}", n), Schema::new(vec![
+    ctx.define_schema(&format!("locations_{}", n),&Schema::new(vec![
         Field::new("id", DataType::UnsignedLong, false),
         Field::new("lat", DataType::Double, false),
         Field::new("lng", DataType::Double, false)]));
 
-    // create execution context
-    let mut ctx = ExecutionContext::new(schemas.clone());
 
     ctx.define_function(&STPointFunc {});
     ctx.define_function(&STAsText{});
@@ -47,10 +47,15 @@ fn run_job(n: u32) {
     let filename = format!("locations_wkt_{}.csv", n);
 
     df.write(&filename).unwrap();
+    let duration = now.elapsed();
+    let seconds = duration.as_secs() as f64
+        + (duration.subsec_nanos() as f64 / 1000000000.0);
 
-    println!("Elapsed time for {} locations is {} seconds", n, now.elapsed().as_secs());
+    println!("Elapsed time for {} locations is {} seconds ({} rows per second)",
+             n, seconds, n as f64 / seconds);
 
 
 
 
 }
+
