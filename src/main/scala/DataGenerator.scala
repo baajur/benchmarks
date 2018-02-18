@@ -26,7 +26,6 @@ object DataGenerator {
     var i : Long = 0
     while (i < n) {
       val (lat, lng) = (r.nextDouble() * 180 - 90, r.nextDouble() * 360 - 180)
-      //val name = r.nextString(100)
       os.write(s"$i,$lat,$lng\n".getBytes)
       i += 1
     }

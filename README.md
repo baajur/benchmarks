@@ -35,3 +35,24 @@ This benchmark tests the following features:
 
 Because DataFusion currently only supports in-memory sorts this benchmark can only be run on small data sets and therefore isn't really a fair test yet.
 
+# Running the benchmarks
+
+## Seeding the data files
+
+To generate the test files used by the benchmarks:
+
+```bash
+./bin/generate-test-data.sh
+```
+
+The data generator will run until you stop it, generating progressively larger test files.
+
+## Running the tests
+
+Script files exist in the `bin` directory for running the benchmarks.
+
+For example:
+
+```bash
+./bin/bench-scala-generate-wkt.sh
+```
