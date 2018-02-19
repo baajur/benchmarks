@@ -8,18 +8,11 @@ object GenerateWKT {
 
   val os = new FileOutputStream(new File(s"progress_${System.currentTimeMillis()}.log"));
 
-
   def main(arg: Array[String]): Unit = {
-//    runJob(100000)
-    generateWkt(10)
-    generateWkt(100)
-    generateWkt(1000)
-    generateWkt(10000)
-    generateWkt(100000)
-    generateWkt(1000000)
-    generateWkt(10000000)
-    generateWkt(100000000)
-    generateWkt(1000000000)
+    if (arg.length == 0) {
+      println("Missing args")
+    }
+    generateWkt(arg(0).toInt)
   }
 
   def generateWkt(n: Long) {
@@ -30,7 +23,7 @@ object GenerateWKT {
     val now = System.currentTimeMillis()
 
     val spark = SparkSession.builder
-      .appName("Simple Application")
+      .appName("GenerateWKT")
       .master("local[1]")
       .getOrCreate()
 

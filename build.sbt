@@ -9,7 +9,3 @@ libraryDependencies += "org.apache.spark" %% "spark-sql" % "2.2.1"
 //libraryDependencies += "org.apache.spark" %% "spark-hive" % "2.2.1"
 //libraryDependencies += "com.esri.hadoop" % "spatial-sdk-hive" % "1.1"
 
-assemblyMergeStrategy in assembly := {
-  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-  case x => MergeStrategy.first
-}
