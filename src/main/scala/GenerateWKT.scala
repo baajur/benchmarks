@@ -27,7 +27,7 @@ object GenerateWKT {
       .master("local[1]")
       .getOrCreate()
 
-    val path = "/tmp/"
+    val path = "/mnt/ssd/"
 
     spark.udf.register("ST_Point", (x: Double, y: Double) => Point(x,y))
     spark.udf.register("ST_AsText", (row: Row) => {
@@ -37,10 +37,10 @@ object GenerateWKT {
     })
 
     val df: DataFrame = spark.read.csv(path + s"locations_$n.csv")
+      .coalesce(1)
       .withColumnRenamed("_c0", "id")
       .withColumnRenamed("_c1", "lat")
       .withColumnRenamed("_c2", "lng")
-      .repartition(1)
 
     df.createOrReplaceTempView("locations")
 
@@ -48,7 +48,7 @@ object GenerateWKT {
     val df2 = spark.sql("SELECT ST_AsText(ST_Point(lat, lng)) FROM locations")
 
     // write output
-    df2.write.mode(SaveMode.Overwrite).csv(s"/tmp/spark-generateWkt-$n.csv")
+    df2.write.mode(SaveMode.Overwrite).csv(path + s"spark-generateWkt-$n.csv")
 
     val duration = (System.currentTimeMillis()-now)/1000.0
     val rowsPerSecond = n / duration
