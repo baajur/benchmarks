@@ -15,7 +15,7 @@ object DataGenerator {
 //
 //    doGen(10)
 
-    generate(1000000000)
+    generate(10000000)
   }
 
   def generate(n: Long) {
@@ -23,7 +23,7 @@ object DataGenerator {
     println(s"Generating $n locations ...")
     val t1 = System.currentTimeMillis()
     val r = scala.util.Random
-    val os = new BufferedOutputStream(new FileOutputStream(new File(s"/mnt/ssd/input/locations_$n.csv")))
+    val os = new BufferedOutputStream(new FileOutputStream(new File(s"/mnt/ssd/input/locations_$n.csv")), 8*1024*1024)
 
     var i : Long = 0
     while (i < n) {

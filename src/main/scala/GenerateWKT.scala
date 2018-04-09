@@ -2,6 +2,7 @@
 import java.io.{File, FileOutputStream}
 
 import SortLocations.os
+import org.apache.spark.sql.types.{DataType, DataTypes}
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 
 object GenerateWKT {
@@ -9,10 +10,38 @@ object GenerateWKT {
   val os = new FileOutputStream(new File(s"progress_${System.currentTimeMillis()}.log"));
 
   def main(arg: Array[String]): Unit = {
-    if (arg.length == 0) {
-      println("Missing args")
-    }
-    generateWkt(arg(0).toInt)
+//    if (arg.length == 0) {
+//      println("Missing args")
+//    }
+//    generateWkt(arg(0).toInt)
+
+
+    val spark = SparkSession.builder
+      .appName("GenerateWKT")
+      .master("local[1]")
+      .getOrCreate()
+
+
+
+
+    val csv = spark.read.csv("/home/andy/git/datafusion-rs/test/data/uk_cities.csv")
+    csv.printSchema()
+
+    import spark.implicits._
+
+    import org.apache.spark.sql.functions._
+
+    val a = csv
+      .withColumnRenamed("_c0", "city")
+      .withColumnRenamed("_c1", "lat")
+      .withColumnRenamed("_c2", "lng")
+
+      val b = a.select(a.col("city"), a.col("lat").cast(DataTypes.FloatType), a.col("lng").cast(DataTypes.FloatType))
+      //.map(row => Row.apply(row.get(0), row.getAs[String](1).toFloat, row.getAs[String](2).toFloat))
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet("/home/andy/git/datafusion-rs/test/data/uk_cities.parquet")
+
   }
 
   def generateWkt(n: Long) {
@@ -41,6 +70,8 @@ object GenerateWKT {
       .withColumnRenamed("_c0", "id")
       .withColumnRenamed("_c1", "lat")
       .withColumnRenamed("_c2", "lng")
+
+    df.write.parquet(s"/tmp/locations_$n.parquet")
 
     df.createOrReplaceTempView("locations")
 
