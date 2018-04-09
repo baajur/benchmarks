@@ -34,7 +34,8 @@ fn generate_wkt(ctx: &mut ExecutionContext, n: u32) {
         Field::new("lng", DataType::Float64, false),
     ]);
 
-    let filename = format!("/mnt/ssd/csv/locations_{}", n);
+    let filename = format!("/mnt/ssd/csv/locations_{}.csv", n);
+    println!("Reading {}", filename);
     let df = ctx.load_csv(&filename, &schema).unwrap();
     ctx.register("locations", df);
 
@@ -45,7 +46,8 @@ fn generate_wkt(ctx: &mut ExecutionContext, n: u32) {
 
     let df = ctx.sql(&sql).unwrap();
 
-    let output_filename = format!("/dev/null/df_locations_wkt_{}.csv", n);
+    let output_filename = format!("/tmp/wkt_{}", n);
+    println!("Writing to {}", output_filename);
 
     ctx.write_csv(df, &output_filename).unwrap();
 

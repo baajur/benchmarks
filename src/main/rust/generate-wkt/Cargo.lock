@@ -74,7 +74,6 @@ dependencies = [
 [[package]]
 name = "datafusion"
 version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -125,7 +124,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "generate-wkt"
 version = "0.1.0"
 dependencies = [
- "datafusion 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "datafusion 0.2.4",
  "datafusion-arrow 0.1.0-nightly-20180406 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -354,7 +353,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum cfg-if 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "d4c819a1287eb618df47cc647173c5c4c66ba19d888a6e50d605672aed3140de"
 "checksum csv 1.0.0-beta.5 (registry+https://github.com/rust-lang/crates.io-index)" = "e7a9e063dcebdb56c306f23e672bfd31df3da8ec5f6d696b35f2c29c2a9572f0"
 "checksum csv-core 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "4dd8e6d86f7ba48b4276ef1317edc8cc36167546d8972feb4a2b5fec0b374105"
-"checksum datafusion 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "edff5df8f47a879acbdb2b278229aaf9fc392c985142d906b1f676f0f983dc72"
 "checksum datafusion-arrow 0.1.0-nightly-20180406 (registry+https://github.com/rust-lang/crates.io-index)" = "dc518b4d1ea6508528c0374c80e8ce4e6d5c9f3f905af2ebb4d9812cf6e8dc63"
 "checksum dtoa 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "09c3753c3db574d215cba4ea76018483895d7bff25a31b49ba45db21c48e50ab"
 "checksum flate2 0.2.20 (registry+https://github.com/rust-lang/crates.io-index)" = "e6234dd4468ae5d1e2dbb06fe2b058696fdc50a339c68a393aefbf00bc81e423"
