@@ -1,8 +1,8 @@
 [package]
-name = "generate-wkt"
+name = "df-bench-nyc-taxi"
 version = "0.1.0"
 authors = ["Andy Grove <andygrove73@gmail.com>"]
 
 [dependencies]
-datafusion-arrow = "0.1.0-nightly-20180409-2"
+datafusion-arrow = "0.1.0-nightly-20180420"
 datafusion = { path = "../../../../../datafusion-rs" }

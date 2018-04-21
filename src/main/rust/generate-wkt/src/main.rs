@@ -15,14 +15,16 @@ fn main() {
     let mut ctx = ExecutionContext::local();
     //    let mut ctx =    ExecutionContext::remote("http://192.168.0.37:2379".to_string());
 
-    let mut n = 10;
+//    generate_wkt(&mut ctx, 1000000);
+
+    let mut n: usize = 10;
     loop {
         generate_wkt(&mut ctx, n);
         n = n * 10;
     }
 }
 
-fn generate_wkt(ctx: &mut ExecutionContext, n: u32) {
+fn generate_wkt(ctx: &mut ExecutionContext, n: usize) {
     println!("Running job for {} locations", n);
 
     let now = Instant::now();

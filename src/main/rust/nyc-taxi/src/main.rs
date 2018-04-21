@@ -1,0 +1,61 @@
+// Copyright 2018 Grove Enterprises LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+use std::fs::File;
+use std::rc::Rc;
+
+extern crate arrow;
+extern crate datafusion;
+
+use arrow::datatypes::*;
+use datafusion::exec::*;
+use datafusion::functions::conversions::*;
+
+fn main() {
+    let path = "/mnt/ssd/nyc_taxis/yellow_tripdata_2017-12.csv";
+    match File::open(path) {
+        Ok(_) => {
+            // create execution context
+            let mut ctx = ExecutionContext::local();
+            ctx.register_scalar_function(Rc::new(ToFloat64Function{}));
+            
+            let field_names = vec![
+                "", "VendorID", "tpep_pickup_datetime", "tpep_dropoff_datetime", "passenger_count",
+                "trip_distance", "RatecodeID", "store_and_fwd_flag", "PULocationID", "DOLocationID",
+                "payment_type", "fare_amount", "extra", "mta_tax", "tip_amount", "tolls_amount",
+                "improvement_surcharge", "total_amount"];
+
+            let fields: Vec<Field> = field_names.iter()
+                .map(|name| Field::new(name, DataType::Utf8, false)).collect();
+
+            let schema = Schema::new(fields)
+
+            // open a CSV file as a dataframe
+            let tripdate = ctx.load_csv(path, &schema, true).unwrap();
+
+            // register as a table so we can run SQL against it
+            ctx.register("tripdate", tripdate);
+
+            // define the SQL statement
+            let sql = "SELECT COUNT(1) FROM tripdata";
+
+            // create a data frame
+            let df = ctx.sql(&sql).unwrap();
+
+            ctx.write_csv(df, "_results.csv").unwrap();
+
+        }
+        _ => println!("Could not locate {} - try downloading it from http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml", path)
+    }
+}

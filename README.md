@@ -24,17 +24,6 @@ This benchmark tests the following features:
 - User Defined Functions
 - User Defined Types
 
-## 2. Sort Locations (work in progress)
-
-This job sorts input files of varying sizes.
-
-This benchmark tests the following features:
-
-- Read / Write CSV
-- Sorting
-
-Because DataFusion currently only supports in-memory sorts this benchmark can only be run on small data sets and therefore isn't really a fair test yet.
-
 # Running the benchmarks
 
 ## Seeding the data files

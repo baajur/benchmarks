@@ -7,40 +7,51 @@ import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 
 object GenerateWKT {
 
-  val os = new FileOutputStream(new File(s"progress_${System.currentTimeMillis()}.log"));
+  val os = new FileOutputStream(new File(s"progress_${System.currentTimeMillis()}.log"))
 
   def main(arg: Array[String]): Unit = {
-//    if (arg.length == 0) {
+
+    generateWkt(10)
+    generateWkt(100)
+    generateWkt(1000)
+    generateWkt(10000)
+    generateWkt(100000)
+    generateWkt(1000000)
+    generateWkt(10000000)
+    generateWkt(100000000)
+    generateWkt(1000000000)
+
+    //    if (arg.length == 0) {
 //      println("Missing args")
 //    }
 //    generateWkt(arg(0).toInt)
 
 
-    val spark = SparkSession.builder
-      .appName("GenerateWKT")
-      .master("local[1]")
-      .getOrCreate()
-
-
-
-
-    val csv = spark.read.csv("/home/andy/git/datafusion-rs/test/data/uk_cities.csv")
-    csv.printSchema()
-
-    import spark.implicits._
-
-    import org.apache.spark.sql.functions._
-
-    val a = csv
-      .withColumnRenamed("_c0", "city")
-      .withColumnRenamed("_c1", "lat")
-      .withColumnRenamed("_c2", "lng")
-
-      val b = a.select(a.col("city"), a.col("lat").cast(DataTypes.FloatType), a.col("lng").cast(DataTypes.FloatType))
-      //.map(row => Row.apply(row.get(0), row.getAs[String](1).toFloat, row.getAs[String](2).toFloat))
-      .write
-      .mode(SaveMode.Overwrite)
-      .parquet("/home/andy/git/datafusion-rs/test/data/uk_cities.parquet")
+//    val spark = SparkSession.builder
+//      .appName("GenerateWKT")
+//      .master("local[1]")
+//      .getOrCreate()
+//
+//
+//
+//
+//    val csv = spark.read.csv("/home/andy/git/datafusion-rs/test/data/uk_cities.csv")
+//    csv.printSchema()
+//
+//    import spark.implicits._
+//
+//    import org.apache.spark.sql.functions._
+//
+//    val a = csv
+//      .withColumnRenamed("_c0", "city")
+//      .withColumnRenamed("_c1", "lat")
+//      .withColumnRenamed("_c2", "lng")
+//
+//      val b = a.select(a.col("city"), a.col("lat").cast(DataTypes.FloatType), a.col("lng").cast(DataTypes.FloatType))
+//      //.map(row => Row.apply(row.get(0), row.getAs[String](1).toFloat, row.getAs[String](2).toFloat))
+//      .write
+//      .mode(SaveMode.Overwrite)
+//      .parquet("/home/andy/git/datafusion-rs/test/data/uk_cities.parquet")
 
   }
 
@@ -56,7 +67,8 @@ object GenerateWKT {
       .master("local[1]")
       .getOrCreate()
 
-    val path = "/mnt/ssd/"
+    val path = "/mnt/ssd/csv/"
+    val outputPath = "/tmp/spark/"
 
     spark.udf.register("ST_Point", (x: Double, y: Double) => Point(x,y))
     spark.udf.register("ST_AsText", (row: Row) => {
@@ -70,8 +82,8 @@ object GenerateWKT {
       .withColumnRenamed("_c0", "id")
       .withColumnRenamed("_c1", "lat")
       .withColumnRenamed("_c2", "lng")
-
-    df.write.parquet(s"/tmp/locations_$n.parquet")
+//
+//    df.write.parquet(s"/tmp/locations_$n.parquet")
 
     df.createOrReplaceTempView("locations")
 
@@ -79,7 +91,7 @@ object GenerateWKT {
     val df2 = spark.sql("SELECT ST_AsText(ST_Point(lat, lng)) FROM locations")
 
     // write output
-    df2.write.mode(SaveMode.Overwrite).csv(path + s"spark-generateWkt-$n.csv")
+    df2.write.mode(SaveMode.Overwrite).csv(outputPath + s"spark-generateWkt-$n.csv")
 
     val duration = (System.currentTimeMillis()-now)/1000.0
     val rowsPerSecond = n / duration
