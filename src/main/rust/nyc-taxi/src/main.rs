@@ -14,6 +14,7 @@
 
 use std::fs::File;
 use std::rc::Rc;
+use std::time::Instant;
 
 extern crate arrow;
 extern crate datafusion;
@@ -26,10 +27,13 @@ fn main() {
     let path = "/mnt/ssd/nyc_taxis/yellow_tripdata_2017-12.csv";
     match File::open(path) {
         Ok(_) => {
+
+            let now = Instant::now();
+
             // create execution context
             let mut ctx = ExecutionContext::local();
             ctx.register_scalar_function(Rc::new(ToFloat64Function{}));
-            
+
             let field_names = vec![
                 "", "VendorID", "tpep_pickup_datetime", "tpep_dropoff_datetime", "passenger_count",
                 "trip_distance", "RatecodeID", "store_and_fwd_flag", "PULocationID", "DOLocationID",
@@ -39,13 +43,13 @@ fn main() {
             let fields: Vec<Field> = field_names.iter()
                 .map(|name| Field::new(name, DataType::Utf8, false)).collect();
 
-            let schema = Schema::new(fields)
+            let schema = Schema::new(fields);
 
             // open a CSV file as a dataframe
-            let tripdate = ctx.load_csv(path, &schema, true).unwrap();
+            let tripdata = ctx.load_csv(path, &schema, true).unwrap();
 
             // register as a table so we can run SQL against it
-            ctx.register("tripdate", tripdate);
+            ctx.register("tripdata", tripdata);
 
             // define the SQL statement
             let sql = "SELECT COUNT(1) FROM tripdata";
@@ -54,6 +58,11 @@ fn main() {
             let df = ctx.sql(&sql).unwrap();
 
             ctx.write_csv(df, "_results.csv").unwrap();
+
+            let duration = now.elapsed();
+            let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
+
+            println!("Elapsed time is {} seconds", seconds);
 
         }
         _ => println!("Could not locate {} - try downloading it from http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml", path)

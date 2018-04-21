@@ -23,14 +23,14 @@ object NYCTaxi {
 
     test(spark, "SELECT COUNT(1) FROM tripdata")
 
-    test(spark, "SELECT passenger_count, COUNT(1) " +
-      "FROM tripdata " +
-      "GROUP BY passenger_count")
-
-    test(spark, "SELECT passenger_count, COUNT(1), MIN(CAST(fare_amount AS FLOAT)), MAX(CAST(fare_amount AS FLOAT)) " +
-      "FROM tripdata " +
-     // "WHERE (payment_type = '1' OR payment_type = '2') AND RateCodeID = '1' " +
-      "GROUP BY passenger_count")
+//    test(spark, "SELECT passenger_count, COUNT(1) " +
+//      "FROM tripdata " +
+//      "GROUP BY passenger_count")
+//
+//    test(spark, "SELECT passenger_count, COUNT(1), MIN(CAST(fare_amount AS FLOAT)), MAX(CAST(fare_amount AS FLOAT)) " +
+//      "FROM tripdata " +
+//     // "WHERE (payment_type = '1' OR payment_type = '2') AND RateCodeID = '1' " +
+//      "GROUP BY passenger_count")
   }
 
   def test(spark: SparkSession, sql: String): Unit = {
