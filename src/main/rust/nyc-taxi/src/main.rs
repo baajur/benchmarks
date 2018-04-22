@@ -35,7 +35,7 @@ fn main() {
             ctx.register_scalar_function(Rc::new(ToFloat64Function{}));
 
             let field_names = vec![
-                "", "VendorID", "tpep_pickup_datetime", "tpep_dropoff_datetime", "passenger_count",
+                "VendorID", "tpep_pickup_datetime", "tpep_dropoff_datetime", "passenger_count",
                 "trip_distance", "RatecodeID", "store_and_fwd_flag", "PULocationID", "DOLocationID",
                 "payment_type", "fare_amount", "extra", "mta_tax", "tip_amount", "tolls_amount",
                 "improvement_surcharge", "total_amount"];
@@ -52,7 +52,8 @@ fn main() {
             ctx.register("tripdata", tripdata);
 
             // define the SQL statement
-            let sql = "SELECT COUNT(1) FROM tripdata";
+//            let sql = "SELECT passenger_count, COUNT(1) FROM tripdata GROUP BY passenger_count";
+            let sql = "SELECT COUNT(passenger_count) FROM tripdata";
 
             // create a data frame
             let df = ctx.sql(&sql).unwrap();

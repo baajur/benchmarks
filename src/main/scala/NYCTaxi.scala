@@ -21,11 +21,11 @@ object NYCTaxi {
     df.createOrReplaceTempView("tripdata")
 
 
-    test(spark, "SELECT COUNT(1) FROM tripdata")
+//    test(spark, "SELECT COUNT(1) FROM tripdata")
 
-//    test(spark, "SELECT passenger_count, COUNT(1) " +
-//      "FROM tripdata " +
-//      "GROUP BY passenger_count")
+    test(spark, "SELECT passenger_count, COUNT(1) " +
+      "FROM tripdata " +
+      "GROUP BY passenger_count")
 //
 //    test(spark, "SELECT passenger_count, COUNT(1), MIN(CAST(fare_amount AS FLOAT)), MAX(CAST(fare_amount AS FLOAT)) " +
 //      "FROM tripdata " +
