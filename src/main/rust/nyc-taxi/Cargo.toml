@@ -6,3 +6,4 @@ authors = ["Andy Grove <andygrove73@gmail.com>"]
 [dependencies]
 datafusion-arrow = "0.1.0-nightly-20180420"
 datafusion = { path = "../../../../../datafusion-rs" }
+flame = "*"

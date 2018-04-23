@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use std::fs::File;
-use std::rc::Rc;
 use std::time::Instant;
 
 extern crate arrow;
@@ -21,7 +20,6 @@ extern crate datafusion;
 
 use arrow::datatypes::*;
 use datafusion::exec::*;
-use datafusion::functions::conversions::*;
 
 fn main() {
     let path = "/mnt/ssd/nyc_taxis/yellow_tripdata_2017-12.csv";
@@ -32,7 +30,6 @@ fn main() {
 
             // create execution context
             let mut ctx = ExecutionContext::local();
-            ctx.register_scalar_function(Rc::new(ToFloat64Function{}));
 
             let field_names = vec![
                 "VendorID", "tpep_pickup_datetime", "tpep_dropoff_datetime", "passenger_count",
@@ -46,14 +43,22 @@ fn main() {
             let schema = Schema::new(fields);
 
             // open a CSV file as a dataframe
-            let tripdata = ctx.load_csv(path, &schema, true).unwrap();
+            let tripdata = ctx.load_csv(path, &schema, true, None).unwrap();
 
             // register as a table so we can run SQL against it
             ctx.register("tripdata", tripdata);
 
             // define the SQL statement
 //            let sql = "SELECT passenger_count, COUNT(1) FROM tripdata GROUP BY passenger_count";
-            let sql = "SELECT COUNT(passenger_count) FROM tripdata";
+//            let sql = "SELECT COUNT(passenger_count) FROM tripdata";
+
+            let sql = "SELECT passenger_count, \
+                COUNT(1), \
+                MIN(CAST(fare_amount AS FLOAT)), \
+                MAX(CAST(fare_amount AS FLOAT)) \
+            FROM tripdata \
+            GROUP BY passenger_count";
+            //
 
             // create a data frame
             let df = ctx.sql(&sql).unwrap();
