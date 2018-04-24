@@ -22,7 +22,8 @@ use arrow::datatypes::*;
 use datafusion::exec::*;
 
 fn main() {
-    let path = "/mnt/ssd/nyc_taxis/yellow_tripdata_2017-12.csv";
+    let path = "/mnt/ssd/nyc_taxis/parquet/yellow_tripdata_2017-12/part-00000-429f3db9-7d51-4636-87f0-944fee7d304c-c000.snappy.parquet";
+//    let path = "/mnt/ssd/nyc_taxis/yellow_tripdata_2017-12.csv";
     match File::open(path) {
         Ok(_) => {
 
@@ -43,7 +44,8 @@ fn main() {
             let schema = Schema::new(fields);
 
             // open a CSV file as a dataframe
-            let tripdata = ctx.load_csv(path, &schema, true, None).unwrap();
+            let tripdata = ctx.load_parquet(path, ).unwrap();
+//            let tripdata = ctx.load_csv(path, &schema, true, None).unwrap();
 
             // register as a table so we can run SQL against it
             ctx.register("tripdata", tripdata);
@@ -58,6 +60,15 @@ fn main() {
                 MAX(CAST(fare_amount AS FLOAT)) \
             FROM tripdata \
             GROUP BY passenger_count";
+
+
+            let sql = "SELECT passenger_count, \
+                COUNT(1), \
+                MIN(fare_amount), \
+                MAX(fare_amount) \
+            FROM tripdata \
+            GROUP BY passenger_count";
+
             //
 
             // create a data frame

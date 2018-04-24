@@ -110,7 +110,7 @@ dependencies = [
 
 [[package]]
 name = "datafusion"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "byteorder 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -163,7 +163,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "generate-wkt"
 version = "0.1.0"
 dependencies = [
- "datafusion 0.2.5",
+ "datafusion 0.2.6",
  "datafusion-arrow 0.1.0-nightly-20180420 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
