@@ -21,67 +21,84 @@ extern crate datafusion;
 use arrow::datatypes::*;
 use datafusion::exec::*;
 
+/// Uses data from http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml
 fn main() {
-    let path = "/mnt/ssd/nyc_taxis/parquet/yellow_tripdata_2017-12/part-00000-429f3db9-7d51-4636-87f0-944fee7d304c-c000.snappy.parquet";
-//    let path = "/mnt/ssd/nyc_taxis/yellow_tripdata_2017-12.csv";
-    match File::open(path) {
-        Ok(_) => {
+    let now = Instant::now();
 
-            let now = Instant::now();
+    // create execution context
+    let mut ctx = ExecutionContext::local();
 
-            // create execution context
-            let mut ctx = ExecutionContext::local();
+//    load_csv(&mut ctx);
+    load_parquet(&mut ctx);
 
-            let field_names = vec![
-                "VendorID", "tpep_pickup_datetime", "tpep_dropoff_datetime", "passenger_count",
-                "trip_distance", "RatecodeID", "store_and_fwd_flag", "PULocationID", "DOLocationID",
-                "payment_type", "fare_amount", "extra", "mta_tax", "tip_amount", "tolls_amount",
-                "improvement_surcharge", "total_amount"];
 
-            let fields: Vec<Field> = field_names.iter()
-                .map(|name| Field::new(name, DataType::Utf8, false)).collect();
-
-            let schema = Schema::new(fields);
-
-            // open a CSV file as a dataframe
-            let tripdata = ctx.load_parquet(path, ).unwrap();
-//            let tripdata = ctx.load_csv(path, &schema, true, None).unwrap();
-
-            // register as a table so we can run SQL against it
-            ctx.register("tripdata", tripdata);
-
-            // define the SQL statement
+    // define the SQL statement
 //            let sql = "SELECT passenger_count, COUNT(1) FROM tripdata GROUP BY passenger_count";
 //            let sql = "SELECT COUNT(passenger_count) FROM tripdata";
 
-            let sql = "SELECT passenger_count, \
-                COUNT(1), \
-                MIN(CAST(fare_amount AS FLOAT)), \
-                MAX(CAST(fare_amount AS FLOAT)) \
-            FROM tripdata \
-            GROUP BY passenger_count";
+//            let sql = "SELECT passenger_count, \
+//                COUNT(1), \
+//                MIN(CAST(fare_amount AS FLOAT)), \
+//                MAX(CAST(fare_amount AS FLOAT)) \
+//            FROM tripdata \
+//            GROUP BY passenger_count";
 
 
-            let sql = "SELECT passenger_count, \
-                COUNT(1), \
-                MIN(fare_amount), \
-                MAX(fare_amount) \
-            FROM tripdata \
-            GROUP BY passenger_count";
+    let sql = "SELECT passenger_count, \
+        COUNT(1), \
+        MIN(fare_amount), \
+        MAX(fare_amount)\
+    FROM tripdata \
+    GROUP BY passenger_count";
 
-            //
+    // create a data frame
+    let df = ctx.sql(&sql).unwrap();
 
-            // create a data frame
-            let df = ctx.sql(&sql).unwrap();
+    df.show(1000);
 
-            ctx.write_csv(df, "_results.csv").unwrap();
+    let duration = now.elapsed();
+    let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
 
-            let duration = now.elapsed();
-            let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
-
-            println!("Elapsed time is {} seconds", seconds);
-
-        }
-        _ => println!("Could not locate {} - try downloading it from http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml", path)
-    }
+    println!("Elapsed time is {} seconds", seconds);
 }
+
+fn load_csv(ctx: &mut ExecutionContext) {
+
+    let path = "/mnt/ssd/nyc_taxis/yellow_tripdata_2017-12.csv";
+
+    let fields = vec![
+        Field::new("VendorID", DataType::Utf8, false),
+        Field::new("tpep_pickup_datetime", DataType::Utf8, false),
+        Field::new("tpep_dropoff_datetime", DataType::Utf8, false),
+        Field::new("passenger_count", DataType::UInt8, false),
+        Field::new("trip_distance", DataType::Utf8, false),
+        Field::new("RatecodeID", DataType::Utf8, false),
+        Field::new("store_and_fwd_flag", DataType::Utf8, false),
+        Field::new("PULocationID", DataType::Utf8, false),
+        Field::new("DOLocationID", DataType::Utf8, false),
+        Field::new("payment_type", DataType::Utf8, false),
+        Field::new("fare_amount", DataType::Float64, false),
+        Field::new("extra", DataType::Utf8, false),
+        Field::new("mta_tax", DataType::Utf8, false),
+        Field::new("tip_amount", DataType::Utf8, false),
+        Field::new("tolls_amount", DataType::Utf8, false),
+        Field::new("improvement_surcharge", DataType::Utf8, false),
+        Field::new("total_amount", DataType::Utf8, false),
+    ];
+
+    let schema = Schema::new(fields);
+
+    // open a CSV file as a dataframe
+    let tripdata = ctx.load_csv(path, &schema, true, None).unwrap();
+    ctx.register("tripdata", tripdata);
+
+}
+
+/// Load a parquet version of the data that was created using Apache Spark
+fn load_parquet(ctx: &mut ExecutionContext) {
+    let path = "/mnt/ssd/nyc_taxis/parquet/yellow_tripdata_2017-12/part-00000-b194f35d-4f5b-4ca9-9a51-322fb8616bc1-c000.snappy.parquet";
+    let tripdata = ctx.load_parquet(path,None).unwrap();
+    ctx.register("tripdata", tripdata);
+
+}
+

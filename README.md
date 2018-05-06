@@ -4,7 +4,9 @@ Benchmarks comparing the performance of DataFusion with Apache Spark.
 
 ## Disclaimer
 
-It is hard to write fair tests at the moment since DataFusion is at such an early stage of development and only has a small subset of the functionality of Apache Spark. 
+It is hard to write fair tests at the moment since DataFusion is at such an early stage of development and only has a small subset of the functionality of Apache Spark.
+
+This repo is badly organized and benchmarking is quite manual at the moment. I hope to clean this up soon. 
 
 # Benchmarks
 
@@ -24,24 +26,7 @@ This benchmark tests the following features:
 - User Defined Functions
 - User Defined Types
 
-# Running the benchmarks
+## 2. Simple Aggregate Queries against NYC Taxi Data
 
-## Seeding the data files
+TBD
 
-To generate the test files used by the benchmarks:
-
-```bash
-./bin/generate-test-data.sh
-```
-
-The data generator will run until you stop it, generating progressively larger test files.
-
-## Running the tests
-
-Script files exist in the `bin` directory for running the benchmarks.
-
-For example:
-
-```bash
-./bin/bench-scala-generate-wkt.sh
-```

@@ -13,6 +13,7 @@ object NYCTaxi {
   def main(arg: Array[String]): Unit = {
 
 //    load_csv()
+//    create_parquet_file()
 
     load_parquet()
 
@@ -47,11 +48,23 @@ object NYCTaxi {
 
     val df = spark.read
       .option("header", "true")
-      .option("inferSchema", "true")
+      .option("inferSchema", "false")
       .csv("/mnt/ssd/nyc_taxis/yellow_tripdata_2017-12.csv")
     df.printSchema()
 
     df.createOrReplaceTempView("tripdata")
+  }
+
+  /** Load CSV with schema inferred so that parquet file has correct types */
+  def create_parquet_file() {
+
+    val df = spark.read
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .csv("/mnt/ssd/nyc_taxis/yellow_tripdata_2017-12.csv")
+    df.printSchema()
+
+    df.coalesce(1).write.mode(SaveMode.Overwrite).parquet("/mnt/ssd/nyc_taxis/parquet/yellow_tripdata_2017-12")
   }
 
   def load_parquet() {
