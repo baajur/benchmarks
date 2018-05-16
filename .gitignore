@@ -4,3 +4,5 @@
 *.csv
 target
 metastore_db
+perf.*
+*.svg

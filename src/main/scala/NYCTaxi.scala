@@ -1,3 +1,4 @@
+import NYCTaxi.test
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
@@ -11,11 +12,17 @@ object NYCTaxi {
     .getOrCreate()
 
   def main(arg: Array[String]): Unit = {
+//    test_parquet()
+    test_csv()
 
-//    load_csv()
-//    create_parquet_file()
 
-    load_parquet()
+  }
+
+  def test_csv() {
+        load_csv()
+    //    create_parquet_file()
+
+
 
     //    test(spark, "SELECT COUNT(1) FROM tripdata")
 
@@ -23,9 +30,12 @@ object NYCTaxi {
     //      "FROM tripdata " +
     //      "GROUP BY passenger_count")
 
-        test(spark, "SELECT passenger_count, COUNT(1), MIN(CAST(fare_amount AS FLOAT)), MAX(CAST(fare_amount AS FLOAT)) " +
-          "FROM tripdata " +
-          "GROUP BY passenger_count")
+//    test(spark, "SELECT COUNT(1), MIN(CAST(fare_amount AS FLOAT)), MAX(CAST(fare_amount AS FLOAT)) FROM tripdata")
+
+    test(spark, "SELECT passenger_count, COUNT(1), MIN(CAST(fare_amount AS FLOAT)), MAX(CAST(fare_amount AS FLOAT)) " +
+      "FROM tripdata " +
+      "GROUP BY passenger_count")
+
 
     /*
 [7,44,-70.0,77.75]
@@ -42,6 +52,18 @@ object NYCTaxi {
 
     // 12 seconds CSV
     // 2 seconds Parquet
+  }
+
+  def test_parquet(): Unit = {
+    load_parquet()
+
+//    test(spark, "SELECT COUNT(1), MIN(fare_amount), MAX(fare_amount) FROM tripdata")
+
+    test(spark, "SELECT passenger_count, COUNT(1), MIN(fare_amount), MAX(fare_amount) " +
+      "FROM tripdata " +
+      "GROUP BY passenger_count")
+
+
   }
 
   def load_csv() {
