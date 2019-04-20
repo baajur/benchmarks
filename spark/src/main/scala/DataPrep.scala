@@ -1,4 +1,7 @@
+import scala.sys.process._
 import org.apache.spark.sql.{SaveMode, SparkSession}
+
+import scala.reflect.io.File
 
 /**
   * Utility for converting CSV to Parquet and repartitioning files.
@@ -6,18 +9,28 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 object DataPrep {
 
   def main(args: Array[String]): Unit = {
-    val csvPath = "~/nyc-tripdata/original"
-    val parquetPath = "~/nyc-tripdata/parquet"
+    val csvPath = "/home/andy/git/andygrove/datafusion-benchmarks/spark/yellow_tripdata_2009-01.csv"
+    val parquetPath = "yellow_tripdata_2009-01.parquet"
 
-    downloadFiles()
+//    downloadFiles()
+
+    convertToParquet(csvPath, parquetPath)
+
+
   }
 
-
+  /** Download the csv files from S3 ... this takes hours to download them all! */
   def downloadFiles(): Unit = {
-    for (year <- 2009 to 2008) {
+    for (year <- 2009 to 2018) {
       for (month <- 1 to 12) {
-        val url = s"https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_$year-$month.csv"
-        println(url)
+        val filename = s"yellow_tripdata_$year-${"%02d".format(month)}.csv"
+        if (File(filename).exists) {
+          println(s"$filename exists", filename)
+        } else {
+          val url = s"https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_$year-${"%02d".format(month)}.csv"
+          println(s"Downloading $url ...")
+          val cmd = Seq("wget", "--quiet", url).!
+        }
       }
     }
   }

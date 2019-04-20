@@ -5,23 +5,35 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   */
 object Benchmarks {
 
-  val spark: SparkSession = SparkSession.builder
-    .appName(this.getClass.getName)
-    .master("local[*]")
-    .getOrCreate()
-
   def main(arg: Array[String]): Unit = {
-    val csvPath = "/home/andy/nyc-tripdata/original"
-    val parquetPath = "/home/andy/nyc-tripdata/parquet"
+    val spark: SparkSession = SparkSession.builder
+      .appName(this.getClass.getName)
+      .master("local[1]")
+      .getOrCreate()
 
-    loadCsv(csvPath)
-    //loadParquet(parquetPath)
+    val parquetPath = "/home/andy/nyc-tripdata/parquet/yellow_tripdata_2009-01.parquet/part-00000-156e4a16-37be-44dc-b4e8-5155e08ce7d3-c000.snappy.parquet"
+
+    loadParquet(spark, parquetPath)
 
     //    test(spark, "SELECT COUNT(1), MIN(fare_amount), MAX(fare_amount) FROM tripdata")
 
-    val sql = "SELECT passenger_count, COUNT(1), MIN(fare_amount), MAX(fare_amount) " +
+    val sql = "SELECT passenger_count, COUNT(1), MIN(fare_amt), MAX(fare_amt) " +
       "FROM tripdata " +
       "GROUP BY passenger_count"
+
+    /*
+    [1,9493418,2.5,200.0]
+[6,63817,2.5,106.9]
+[3,624652,2.5,190.1]
+[5,1263356,2.5,179.3]
+[4,299288,2.5,187.7]
+[113,1,13.3,13.3]
+[2,2347163,2.5,200.0]
+[0,718,2.5,45.0]
+Took 2659 ms
+     */
+
+
 
     benchmark(spark, sql)
   }
@@ -56,7 +68,7 @@ object Benchmarks {
     // 2 seconds Parquet
 
 
-  def loadCsv(path: String) {
+  def loadCsv(spark: SparkSession, path: String) {
 
     val df = spark.read
       .option("header", "false")
@@ -68,7 +80,7 @@ object Benchmarks {
     df.createOrReplaceTempView("tripdata")
   }
 
-  def loadParquet(path: String) {
+  def loadParquet(spark: SparkSession, path: String) {
     val df = spark.read
       .parquet(path)
 
