@@ -1,3 +1,5 @@
+import java.util.concurrent.Executors
+
 import scala.sys.process._
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -9,10 +11,12 @@ import scala.reflect.io.File
 object DataPrep {
 
   def main(args: Array[String]): Unit = {
+    downloadFiles()
+    //bulkConvert()
+  }
 
-//    downloadFiles()
-
-    for (year <- 2009 to 2010) {
+  private def bulkConvert() = {
+    for (year <- 2009 to 2019) {
       for (month <- 1 to 13) {
         val monthStr = "%02d".format(month)
         val csvPath = s"/home/andy/nyc-tripdata/source/yellow_tripdata_$year-$monthStr.csv"
@@ -29,15 +33,22 @@ object DataPrep {
 
   /** Download the csv files from S3 ... this takes hours to download them all! */
   def downloadFiles(): Unit = {
-    for (year <- 2009 to 2018) {
-      for (month <- 1 to 12) {
+
+    val exec = Executors.newFixedThreadPool(24)
+
+    for (year <- 2009 to 2019) {
+      for (month <- 1 to 13) {
         val filename = s"yellow_tripdata_$year-${"%02d".format(month)}.csv"
         if (File(filename).exists) {
           println(s"$filename exists", filename)
         } else {
-          val url = s"https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_$year-${"%02d".format(month)}.csv"
-          println(s"Downloading $url ...")
-          val cmd = Seq("wget", "--quiet", url).!
+          exec.execute(new Runnable {
+            override def run(): Unit = {
+              val url = s"https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_$year-${"%02d".format(month)}.csv"
+              println(s"Downloading $url ...")
+              val cmd = Seq("wget", "--quiet", url).!
+            }
+          })
         }
       }
     }
