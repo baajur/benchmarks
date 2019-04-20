@@ -1,6 +1,3 @@
-import NYCTaxi.test
-import org.apache.spark.sql.{SaveMode, SparkSession}
-
 /**
   * Data: http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml
   */
@@ -8,12 +5,12 @@ object NYCTaxi {
 
   val spark: SparkSession = SparkSession.builder
     .appName(this.getClass.getName)
-    .master("local[1]") // force single thread usage for fair comparison to DataFusion
+    .master("local[*]")
     .getOrCreate()
 
   def main(arg: Array[String]): Unit = {
 //    test_parquet()
-    test_csv()
+//    test_csv()
 
 
   }
