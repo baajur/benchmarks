@@ -22,44 +22,37 @@ extern crate arrow;
 extern crate datafusion;
 
 use arrow::datatypes::*;
+use datafusion::datasource::parquet::{ParquetFile, ParquetTable, };
 use datafusion::execution::context::ExecutionContext;
-use datafusion::execution::datasource::CsvDataSource;
 use datafusion::execution::relation::Relation;
 
-/// Uses data from http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml
 fn main() {
-//    let now = Instant::now();
-//
-//    // create execution context
-//    let mut ctx = ExecutionContext::new();
-//
-//    load_parquet(&mut ctx);
-//
-////    let sql = "SELECT  \
-////        COUNT(1), \
-////        MIN(fare_amount), \
-////        MAX(fare_amount) \
-////    FROM tripdata \
-////    ";
-//
-//    let sql = "SELECT passenger_count, \
-//        COUNT(1), \
-//        MIN(fare_amount), \
-//        MAX(fare_amount)\
-//    FROM tripdata \
-//    GROUP BY passenger_count";
-//
-//    // create a data frame
-//    let df = ctx.sql(&sql).unwrap();
-//
-//    //df.show(1000);
-//
-//    let duration = now.elapsed();
-//    let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
-//
-//    println!("Elapsed time is {} seconds", seconds);
-//
-//}
+    let now = Instant::now();
+
+    // create execution context
+    let mut ctx = ExecutionContext::new();
+
+    let filename = "/home/andy/nyc-tripdata/parquet/yellow_tripdata_2009-01.parquet/part-00000-156e4a16-37be-44dc-b4e8-5155e08ce7d3-c000.snappy.parquet";
+
+    ctx.register_table("tripdata", Rc::new(ParquetTable::try_new(filename).unwrap()));
+
+    let sql = "SELECT Passenger_Count, \
+        MIN(Fare_Amt), \
+        MAX(Fare_Amt)\
+    FROM tripdata \
+    GROUP BY Passenger_Count";
+
+    // create a data frame
+    let result = ctx.sql(&sql, 1024).unwrap();
+
+    show(result);
+
+    let duration = now.elapsed();
+    let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
+
+    println!("Elapsed time is {} seconds", seconds);
+
+}
 
 
 fn show(df: Rc<RefCell<Relation>>) {

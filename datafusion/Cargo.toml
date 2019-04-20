@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Andy Grove <andygrove73@gmail.com>"]
 
 [dependencies]
-arrow = "0.12.0"
-parquet = "0.12.0"
-datafusion = "0.6.0"
+arrow = "0.13.0"
+parquet = "0.13.0"
+datafusion = "0.13.0"
 flame = "*"
