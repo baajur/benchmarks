@@ -9,14 +9,22 @@ import scala.reflect.io.File
 object DataPrep {
 
   def main(args: Array[String]): Unit = {
-    val csvPath = "/home/andy/git/andygrove/datafusion-benchmarks/spark/yellow_tripdata_2009-01.csv"
-    val parquetPath = "yellow_tripdata_2009-01.parquet"
 
 //    downloadFiles()
 
-    convertToParquet(csvPath, parquetPath)
-
-
+    for (year <- 2009 to 2010) {
+      for (month <- 1 to 13) {
+        val monthStr = "%02d".format(month)
+        val csvPath = s"/home/andy/nyc-tripdata/source/yellow_tripdata_$year-$monthStr.csv"
+        val parquetPath = s"/home/andy/nyc-tripdata/parquet/year=$year/month=$monthStr"
+        if (File(parquetPath).exists) {
+          println(s"$parquetPath exists")
+        } else {
+          println(s"Creating $parquetPath")
+          convertToParquet(csvPath, parquetPath)
+        }
+      }
+    }
   }
 
   /** Download the csv files from S3 ... this takes hours to download them all! */
