@@ -15,9 +15,11 @@ object Benchmarks {
 
     loadParquet(spark, parquetPath)
 
-    val sql = "SELECT passenger_count, MIN(fare_amt), MAX(fare_amt) " +
-      "FROM tripdata " +
-      "GROUP BY passenger_count"
+//    val sql = "SELECT passenger_count, MIN(fare_amount), MAX(fare_amount) " +
+//      "FROM tripdata " +
+//      "GROUP BY passenger_count"
+
+    val sql = "SELECT COUNT(*) FROM tripdata"
 
     benchmark(spark, sql)
   }

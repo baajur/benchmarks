@@ -15,6 +15,9 @@
 use std::rc::Rc;
 use std::thread;
 use std::time::Instant;
+use std::io;
+use std::fs;
+use std::path::Path;
 
 extern crate arrow;
 extern crate datafusion;
@@ -28,21 +31,18 @@ use datafusion::error::Result;
 use datafusion::execution::context::ExecutionContext;
 
 fn main() {
-    let partitions = vec![
-        "/home/andy/nyc-tripdata/parquet/year=2009/month=07/part-00000-91f987b1-e61a-4d8d-830d-9886bf99d957-c000.snappy.parquet",
-        "/home/andy/nyc-tripdata/parquet/year=2009/month=01/part-00000-5027c231-e158-4301-b7f5-6ff371c28df9-c000.snappy.parquet",
-        "/home/andy/nyc-tripdata/parquet/year=2009/month=02/part-00000-fb9bd700-47f9-4986-b5c0-dccc7a55448c-c000.snappy.parquet",
-        "/home/andy/nyc-tripdata/parquet/year=2009/month=04/part-00000-972cb6cf-e108-40d1-b917-0d0257f58e48-c000.snappy.parquet",
-        "/home/andy/nyc-tripdata/parquet/year=2009/month=03/part-00000-c8d1adc1-96de-46f0-ad6f-870456173a19-c000.snappy.parquet",
-        "/home/andy/nyc-tripdata/parquet/year=2009/month=06/part-00000-d46dc8f6-8e49-4b7c-9f2b-3d73d6394385-c000.snappy.parquet",
-        "/home/andy/nyc-tripdata/parquet/year=2009/month=05/part-00000-670cb9a0-53e6-4c7d-985c-78c50f555276-c000.snappy.parquet",
-    ];
 
-    let sql = "SELECT Passenger_Count, \
-               MIN(Fare_Amt), \
-               MAX(Fare_Amt)\
+    let partitions = visit_dirs(&Path::new("/home/andy/nyc-tripdata/parquet")).unwrap();
+
+    for p in &partitions {
+        println!("{}", p);
+    }
+
+    let sql = "SELECT passenger_count, \
+               MIN(fare_amount), \
+               MAX(fare_amount)\
                FROM tripdata \
-               GROUP BY Passenger_Count";
+               GROUP BY passenger_count";
 
     let now = Instant::now();
 
@@ -57,7 +57,7 @@ fn main() {
     // wait for all threads to finish
     for handle in handles {
         let batch = handle.join().unwrap();
-        show_batch(&batch);
+        //show_batch(&batch);/year=2011
     }
 
     //TODO aggregate the results
@@ -66,6 +66,41 @@ fn main() {
     let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
 
     println!("Query took {} seconds", seconds);
+}
+
+fn visit_dirs(dir: &Path) -> io::Result<Vec<String>> {
+    let mut files: Vec<String> = vec![];
+    if dir.is_dir() {
+        let entries = fs::read_dir(dir)?;
+        let mut success = false;
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+            let path = entry.path().into_os_string().into_string().unwrap();
+            if path.ends_with("_SUCCESS") {
+                success = true;
+                break;
+            }
+        }
+
+        let entries = fs::read_dir(dir)?;
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                let mut dir_files = visit_dirs(&path)?;
+                files.append(&mut dir_files);
+            } else {
+                if success {
+                    let path = entry.path().into_os_string().into_string().unwrap();
+                    if path.ends_with(".parquet") {
+                        files.push(path);
+                    }
+                }
+            }
+        }
+    }
+    Ok(files)
 }
 
 /// Execute an aggregate query on a single parquet file

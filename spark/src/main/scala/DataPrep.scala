@@ -11,13 +11,16 @@ import scala.reflect.io.File
 object DataPrep {
 
   def main(args: Array[String]): Unit = {
-    downloadFiles()
-    //bulkConvert()
+//    downloadFiles()
+    bulkConvert()
   }
 
   private def bulkConvert() = {
-    for (year <- 2009 to 2019) {
-      for (month <- 1 to 13) {
+
+    val exec = Executors.newFixedThreadPool(24)
+
+    for (year <- 2010 to 2018) {
+      for (month <- 1 to 12) {
         val monthStr = "%02d".format(month)
         val csvPath = s"/home/andy/nyc-tripdata/source/yellow_tripdata_$year-$monthStr.csv"
         val parquetPath = s"/home/andy/nyc-tripdata/parquet/year=$year/month=$monthStr"
@@ -25,7 +28,11 @@ object DataPrep {
           println(s"$parquetPath exists")
         } else {
           println(s"Creating $parquetPath")
-          convertToParquet(csvPath, parquetPath)
+          exec.execute(new Runnable {
+            override def run(): Unit = {
+              convertToParquet(csvPath, parquetPath)
+            }
+          })
         }
       }
     }
@@ -36,8 +43,8 @@ object DataPrep {
 
     val exec = Executors.newFixedThreadPool(24)
 
-    for (year <- 2009 to 2019) {
-      for (month <- 1 to 13) {
+    for (year <- 2009 to 2018) {
+      for (month <- 1 to 12) {
         val filename = s"yellow_tripdata_$year-${"%02d".format(month)}.csv"
         if (File(filename).exists) {
           println(s"$filename exists", filename)
@@ -46,7 +53,7 @@ object DataPrep {
             override def run(): Unit = {
               val url = s"https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_$year-${"%02d".format(month)}.csv"
               println(s"Downloading $url ...")
-              val cmd = Seq("wget", "--quiet", url).!
+              //val cmd = Seq("wget", "--quiet", url).!
             }
           })
         }

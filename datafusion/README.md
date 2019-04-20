@@ -6,5 +6,5 @@
 Roadmap:
 
 - [x] Manual parallel aggregate query
-- [ ] DataFusion implementing parallel query (being prototyped in )
+- [ ] DataFusion implementing parallel query
 - [ ] Distributed query execution using Kubernetes
