@@ -8,7 +8,7 @@ object Benchmarks {
   def main(arg: Array[String]): Unit = {
     val spark: SparkSession = SparkSession.builder
       .appName(this.getClass.getName)
-      .master("local[1]")
+      .master("local[*]")
       .getOrCreate()
 
     val parquetPath = "/home/andy/nyc-tripdata/parquet/yellow_tripdata_2009-01.parquet/part-00000-156e4a16-37be-44dc-b4e8-5155e08ce7d3-c000.snappy.parquet"
@@ -17,7 +17,7 @@ object Benchmarks {
 
     //    test(spark, "SELECT COUNT(1), MIN(fare_amount), MAX(fare_amount) FROM tripdata")
 
-    val sql = "SELECT passenger_count, COUNT(1), MIN(fare_amt), MAX(fare_amt) " +
+    val sql = "SELECT passenger_count, MIN(fare_amt), MAX(fare_amt) " +
       "FROM tripdata " +
       "GROUP BY passenger_count"
 

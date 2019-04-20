@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::fs::File;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::Arc;
 use std::time::Instant;
 
 extern crate arrow;
 extern crate datafusion;
 
-use arrow::datatypes::*;
-use datafusion::datasource::parquet::{ParquetFile, ParquetTable, };
+use arrow::array::{UInt32Array, Int32Array, Float64Array};
+use arrow::datatypes::DataType;
+
+use datafusion::datasource::parquet::ParquetTable;
 use datafusion::execution::context::ExecutionContext;
 use datafusion::execution::relation::Relation;
 
@@ -41,6 +41,19 @@ fn main() {
         MAX(Fare_Amt)\
     FROM tripdata \
     GROUP BY Passenger_Count";
+
+    /*
+    RecordBatch has 8 rows and 3 columns
+["2", "2.5", "200"]
+["0", "2.5", "45"]
+["113", "13.3", "13.3"]
+["6", "2.5", "106.9"]
+["4", "2.5", "187.7"]
+["3", "2.5", "190.1"]
+["1", "2.5", "200"]
+["5", "2.5", "179.3"]
+Elapsed time is 1.995201016 seconds
+*/
 
     // create a data frame
     let result = ctx.sql(&sql, 1024).unwrap();
@@ -65,6 +78,31 @@ fn show(df: Rc<RefCell<Relation>>) {
             batch.num_rows(),
             batch.num_columns()
         );
+
+        for row in 0..batch.num_rows() {
+            let mut line = Vec::with_capacity(batch.num_columns());
+            for col in 0..batch.num_columns() {
+                let array = batch.column(col);
+                match array.data_type() {
+                    DataType::Int32 => {
+                        let array = array.as_any().downcast_ref::<Int32Array>().unwrap();
+                        line.push(format!("{}", array.value(row)));
+                    }
+                    DataType::UInt32 => {
+                        let array = array.as_any().downcast_ref::<UInt32Array>().unwrap();
+                        line.push(format!("{}", array.value(row)));
+                    }
+                    DataType::Float64 => {
+                        let array = array.as_any().downcast_ref::<Float64Array>().unwrap();
+                        line.push(format!("{}", array.value(row)));
+                    }
+                    other => {
+                        line.push(format!("unsupported type {:?}", other));
+                    }
+                }
+            }
+            println!("{:?}", line);
+        }
     }
 
 }
