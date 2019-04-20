@@ -6,3 +6,4 @@ This repo contains:
 - Spark benchmarks 
 - DataFusion benchmarks
 
+Benchmarks use data from https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page

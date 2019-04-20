@@ -1,7 +1,9 @@
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
 /**
   * Data: http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml
   */
-object NYCTaxi {
+object Benchmarks {
 
   val spark: SparkSession = SparkSession.builder
     .appName(this.getClass.getName)
@@ -9,17 +11,20 @@ object NYCTaxi {
     .getOrCreate()
 
   def main(arg: Array[String]): Unit = {
-//    test_parquet()
-//    test_csv()
+    val csvPath = "/home/andy/nyc-tripdata/original"
+    val parquetPath = "/home/andy/nyc-tripdata/parquet"
 
+    loadCsv(csvPath)
+    //loadParquet(parquetPath)
 
+    //    test(spark, "SELECT COUNT(1), MIN(fare_amount), MAX(fare_amount) FROM tripdata")
+
+    val sql = "SELECT passenger_count, COUNT(1), MIN(fare_amount), MAX(fare_amount) " +
+      "FROM tripdata " +
+      "GROUP BY passenger_count"
+
+    benchmark(spark, sql)
   }
-
-  def test_csv() {
-        load_csv()
-    //    create_parquet_file()
-
-
 
     //    test(spark, "SELECT COUNT(1) FROM tripdata")
 
@@ -29,9 +34,9 @@ object NYCTaxi {
 
 //    test(spark, "SELECT COUNT(1), MIN(CAST(fare_amount AS FLOAT)), MAX(CAST(fare_amount AS FLOAT)) FROM tripdata")
 
-    test(spark, "SELECT passenger_count, COUNT(1), MIN(CAST(fare_amount AS FLOAT)), MAX(CAST(fare_amount AS FLOAT)) " +
-      "FROM tripdata " +
-      "GROUP BY passenger_count")
+//    benchmark(spark, "SELECT passenger_count, COUNT(1), MIN(CAST(fare_amount AS FLOAT)), MAX(CAST(fare_amount AS FLOAT)) " +
+//      "FROM tripdata " +
+//      "GROUP BY passenger_count")
 
 
     /*
@@ -49,52 +54,30 @@ object NYCTaxi {
 
     // 12 seconds CSV
     // 2 seconds Parquet
-  }
-
-  def test_parquet(): Unit = {
-    load_parquet()
-
-//    test(spark, "SELECT COUNT(1), MIN(fare_amount), MAX(fare_amount) FROM tripdata")
-
-    test(spark, "SELECT passenger_count, COUNT(1), MIN(fare_amount), MAX(fare_amount) " +
-      "FROM tripdata " +
-      "GROUP BY passenger_count")
 
 
-  }
-
-  def load_csv() {
+  def loadCsv(path: String) {
 
     val df = spark.read
-      .option("header", "true")
+      .option("header", "false")
       .option("inferSchema", "false")
-      .csv("/mnt/ssd/nyc_taxis/yellow_tripdata_2017-12.csv")
+      .csv(path)
+
     df.printSchema()
 
     df.createOrReplaceTempView("tripdata")
   }
 
-  /** Load CSV with schema inferred so that parquet file has correct types */
-  def create_parquet_file() {
-
+  def loadParquet(path: String) {
     val df = spark.read
-      .option("header", "true")
-      .option("inferSchema", "true")
-      .csv("/mnt/ssd/nyc_taxis/yellow_tripdata_2017-12.csv")
-    df.printSchema()
+      .parquet(path)
 
-    df.coalesce(1).write.mode(SaveMode.Overwrite).parquet("/mnt/ssd/nyc_taxis/parquet/yellow_tripdata_2017-12")
-  }
-
-  def load_parquet() {
-    val df = spark.read
-      .parquet("/mnt/ssd/nyc_taxis/parquet/yellow_tripdata_2017-12")
     df.printSchema()
 
     df.createOrReplaceTempView("tripdata")
   }
 
-  def test(spark: SparkSession, sql: String): Unit = {
+  def benchmark(spark: SparkSession, sql: String): Unit = {
     println(sql)
     val start = System.currentTimeMillis()
     val df2 = spark.sql(sql)
