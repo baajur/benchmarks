@@ -7,4 +7,16 @@ authors = ["Andy Grove <andygrove73@gmail.com>"]
 arrow = "0.13.0"
 parquet = "0.13.0"
 datafusion = "0.13.0"
-flame = "*"
+clap = "2.33.0"
+rocket = "0.4.0"
+rocket_codegen = "0.4.0"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+
+[dependencies.rocket_contrib]
+version = "*"
+default-features = false
+features = ["json"]
+
+

@@ -1,16 +1,10 @@
-// Copyright 2018 Grove Enterprises LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+#![feature(proc_macro_hygiene, decl_macro)]
+
+#[macro_use] extern crate rocket;
+#[macro_use] extern crate rocket_contrib;
+#[macro_use] extern crate serde_derive;
+extern crate arrow;
+extern crate datafusion;
 
 use std::rc::Rc;
 use std::thread;
@@ -18,9 +12,6 @@ use std::time::Instant;
 use std::io;
 use std::fs;
 use std::path::Path;
-
-extern crate arrow;
-extern crate datafusion;
 
 use arrow::array::{Float64Array, Int32Array, UInt32Array};
 use arrow::datatypes::DataType;
@@ -30,13 +21,47 @@ use datafusion::datasource::parquet::ParquetTable;
 use datafusion::error::Result;
 use datafusion::execution::context::ExecutionContext;
 
+use rocket::State;
+use rocket_contrib::json::Json;
+use datafusion::datasource::MemTable;
+
+struct QueryContext {
+    partitions: Vec<String>
+}
+
+#[derive(Deserialize)]
+struct Query {
+    path: String,
+    sql: String
+}
+
+#[post("/", data = "<query>")]
+fn query(context: State<QueryContext>, query: Json<Query>) -> String {
+    let partitions = visit_dirs(&Path::new(&query.path)).unwrap();
+    execute_query(&partitions);
+    "Hello, world!".to_string()
+}
+
 fn main() {
+//    manual_test();
+    run_query_server();
+}
 
+fn run_query_server() {
     let partitions = visit_dirs(&Path::new("/home/andy/nyc-tripdata/parquet")).unwrap();
+    let state = QueryContext { partitions };
+    rocket::ignite()
+        .manage(state)
+        .mount("/", routes![query])
+        .launch();
+}
 
-    for p in &partitions {
-        println!("{}", p);
-    }
+fn manual_test() {
+    let partitions = visit_dirs(&Path::new("/home/andy/nyc-tripdata/parquet")).unwrap();
+    execute_query(&partitions);
+}
+
+fn execute_query(partitions: &Vec<String>) {
 
     let sql = "SELECT passenger_count, \
                MIN(fare_amount), \
@@ -57,8 +82,10 @@ fn main() {
     // wait for all threads to finish
     for handle in handles {
         let batch = handle.join().unwrap();
-        //show_batch(&batch);/year=2011
+        show_batch(&batch);
     }
+
+
 
     //TODO aggregate the results
 
@@ -120,7 +147,7 @@ fn execute_aggregate(path: &str, sql: &str) -> Result<Option<RecordBatch>> {
 
     let mut ref_mut = result.borrow_mut();
     let batch = ref_mut.next();
-    println!("Query against {} took {} seconds", path, seconds);
+    //println!("Query against {} took {} seconds", path, seconds);
 
     batch
 }

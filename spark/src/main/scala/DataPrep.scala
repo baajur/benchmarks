@@ -12,7 +12,21 @@ object DataPrep {
 
   def main(args: Array[String]): Unit = {
 //    downloadFiles()
-    bulkConvert()
+//    bulkConvert()
+    repartition("/home/andy/nyc-tripdata/parquet" , "/home/andy/nyc-tripdata/parquet_24", 24)
+  }
+
+  private def repartition(sourcePath: String, destPath: String, partitions: Int): Unit = {
+    val spark: SparkSession = SparkSession.builder
+      .appName(this.getClass.getName)
+      .master("local[*]")
+      .getOrCreate()
+
+    spark.read.parquet(sourcePath)
+      .repartition(partitions)
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet(destPath)
   }
 
   private def bulkConvert() = {
