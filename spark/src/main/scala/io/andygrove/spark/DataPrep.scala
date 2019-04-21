@@ -1,6 +1,7 @@
+package io.andygrove.spark
+
 import java.util.concurrent.Executors
 
-import scala.sys.process._
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 import scala.reflect.io.File
@@ -9,12 +10,6 @@ import scala.reflect.io.File
   * Utility for converting CSV to Parquet and repartitioning files.
   */
 object DataPrep {
-
-  def main(args: Array[String]): Unit = {
-//    downloadFiles()
-//    bulkConvert()
-    repartition("/home/andy/nyc-tripdata/parquet" , "/home/andy/nyc-tripdata/parquet_24", 24)
-  }
 
   private def repartition(sourcePath: String, destPath: String, partitions: Int): Unit = {
     val spark: SparkSession = SparkSession.builder
@@ -57,7 +52,7 @@ object DataPrep {
 
     val exec = Executors.newFixedThreadPool(24)
 
-    for (year <- 2009 to 2018) {
+    for (year <- 2010 to 2018) {
       for (month <- 1 to 12) {
         val filename = s"yellow_tripdata_$year-${"%02d".format(month)}.csv"
         if (File(filename).exists) {
@@ -88,12 +83,14 @@ object DataPrep {
       .option("inferSchema", "true")
       .csv(csvPath)
 
-    df.printSchema()
-
     df.coalesce(1)
       .write
       .mode(SaveMode.Overwrite)
       .parquet(parquetPath)
+
+
+    df.printSchema()
+
   }
 
 }
