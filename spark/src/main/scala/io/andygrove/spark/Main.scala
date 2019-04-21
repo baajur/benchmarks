@@ -1,5 +1,6 @@
 package io.andygrove.spark
 
+import io.andygrove.spark.server.SparkQueryServer
 import org.rogach.scallop._
 
 class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
@@ -15,8 +16,12 @@ class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     val destPath = trailArg[String](required = true)
   }
 
+  val server = new Subcommand("server")
+
   addSubcommand(bench)
   addSubcommand(convert)
+  addSubcommand(server)
+
   requireSubcommand()
   verify()
 }
@@ -32,6 +37,9 @@ object Main {
 
       case Some(conf.bench) =>
         Benchmarks.run(conf.bench.sourcePath(), conf.bench.sql(), conf.bench.iterations.getOrElse("1").toInt)
+
+      case Some(conf.server) =>
+        SparkQueryServer.main(Array("server"))
 
       case _ =>
         println("invalid subcommand")

@@ -35,7 +35,13 @@ Converts a single CSV file to a Parquet file.
 ## Run in-process benchmark
 
 ```bash
-./gradlew run --args='bench /home/andy/nyc-tripdata/parquet "SELECT passenger_count, MIN(fare_amount), MAX(fare_amount) FROM tripdata GROUP BY passenger_count"'
+./gradlew run --args='bench /home/andy/nyc-tripdata/parquet "SELECT passenger_count, MIN(fare_amount), MAX(fare_amount) FROM tripdata GROUP BY passenger_count" 5'
+```
+
+## Rust REST API
+
+```bash
+./gradlew run --args='server'
 ```
 
 # Status

@@ -7,10 +7,12 @@ import io.dropwizard.setup.{Bootstrap, Environment}
 class MyConfiguration extends Configuration {
 }
 
-object QueryServer extends ScalaApplication[MyConfiguration] {
+object SparkQueryServer extends ScalaApplication[MyConfiguration] {
 
   override def init(bootstrap: Bootstrap[MyConfiguration]) {
   }
+
+  override def bootstrapLogging(): Unit = {}
 
   def run(conf: MyConfiguration, env: Environment) {
     env.jersey().register(new SharedContextQueryResource(conf))
