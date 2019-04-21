@@ -23,41 +23,55 @@ use datafusion::execution::context::ExecutionContext;
 
 use rocket::State;
 use rocket_contrib::json::Json;
-use datafusion::datasource::MemTable;
+
+use clap::{Arg, App, SubCommand};
 
 struct QueryContext {
-    partitions: Vec<String>
 }
 
 #[derive(Deserialize)]
 struct Query {
     path: String,
-    sql: String
+    _sql: String
 }
 
 #[post("/", data = "<query>")]
-fn query(context: State<QueryContext>, query: Json<Query>) -> String {
+fn query(_context: State<QueryContext>, query: Json<Query>) -> String {
     let partitions = visit_dirs(&Path::new(&query.path)).unwrap();
     execute_query(&partitions);
     "Hello, world!".to_string()
 }
 
 fn main() {
-//    manual_test();
-    run_query_server();
+
+    let matches = App::new("DataFusion Benchmarks")
+        .author("Andy Grove")
+        .arg(Arg::with_name("path"))
+        .subcommand(SubCommand::with_name("bench"))
+        .subcommand(SubCommand::with_name("server"))
+        .get_matches();
+
+    let (cmd, matches) = matches.subcommand();
+
+    let path = matches.unwrap().value_of("path").unwrap();
+
+    match cmd {
+        "bench" => manual_test(path),
+        "server" => run_query_server(),
+        _ => println!("???")
+    }
 }
 
 fn run_query_server() {
-    let partitions = visit_dirs(&Path::new("/home/andy/nyc-tripdata/parquet")).unwrap();
-    let state = QueryContext { partitions };
+    let state = QueryContext {};
     rocket::ignite()
         .manage(state)
         .mount("/", routes![query])
         .launch();
 }
 
-fn manual_test() {
-    let partitions = visit_dirs(&Path::new("/home/andy/nyc-tripdata/parquet")).unwrap();
+fn manual_test(path: &str) {
+    let partitions = visit_dirs(&Path::new(path)).unwrap();
     execute_query(&partitions);
 }
 
@@ -102,7 +116,6 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<String>> {
         let mut success = false;
         for entry in entries {
             let entry = entry?;
-            let path = entry.path();
             let path = entry.path().into_os_string().into_string().unwrap();
             if path.ends_with("_SUCCESS") {
                 success = true;
@@ -132,7 +145,6 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<String>> {
 
 /// Execute an aggregate query on a single parquet file
 fn execute_aggregate(path: &str, sql: &str) -> Result<Option<RecordBatch>> {
-    let now = Instant::now();
 
     // create execution context
     let mut ctx = ExecutionContext::new();
@@ -142,12 +154,8 @@ fn execute_aggregate(path: &str, sql: &str) -> Result<Option<RecordBatch>> {
     // create a data frame
     let result = ctx.sql(&sql, 1024).unwrap();
 
-    let duration = now.elapsed();
-    let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
-
     let mut ref_mut = result.borrow_mut();
     let batch = ref_mut.next();
-    //println!("Query against {} took {} seconds", path, seconds);
 
     batch
 }
