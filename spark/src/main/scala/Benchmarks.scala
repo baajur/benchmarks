@@ -11,15 +11,15 @@ object Benchmarks {
       .master("local[*]")
       .getOrCreate()
 
-    val parquetPath = "/home/andy/nyc-tripdata/parquet"
+    val parquetPath = "/home/andy/nyc-tripdata/parquet/year=2018/month=12"
 
     loadParquet(spark, parquetPath)
 
-//    val sql = "SELECT passenger_count, MIN(fare_amount), MAX(fare_amount) " +
-//      "FROM tripdata " +
-//      "GROUP BY passenger_count"
+    val sql = "SELECT passenger_count, MIN(fare_amount), MAX(fare_amount) " +
+      "FROM tripdata " +
+      "GROUP BY passenger_count"
 
-    val sql = "SELECT COUNT(*) FROM tripdata"
+//    val sql = "SELECT COUNT(*) FROM tripdata"
 
     benchmark(spark, sql)
   }
