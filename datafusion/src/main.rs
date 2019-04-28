@@ -32,13 +32,13 @@ struct QueryContext {
 #[derive(Deserialize)]
 struct Query {
     path: String,
-    _sql: String
+    sql: String
 }
 
 #[post("/", data = "<query>")]
 fn query(_context: State<QueryContext>, query: Json<Query>) -> String {
     let partitions = visit_dirs(&Path::new(&query.path)).unwrap();
-    execute_query(&partitions);
+    execute_query(&partitions, &query.sql);
     "Hello, world!".to_string()
 }
 
@@ -46,17 +46,24 @@ fn main() {
 
     let matches = App::new("DataFusion Benchmarks")
         .author("Andy Grove")
-        .arg(Arg::with_name("path"))
-        .subcommand(SubCommand::with_name("bench"))
+        .subcommand(SubCommand::with_name("bench")
+            .arg(Arg::with_name("sql").long("sql").takes_value(true).required(true))
+            .arg(Arg::with_name("path").long("path").takes_value(true).required(true))
+            .arg(Arg::with_name("iterations").long("iterations").takes_value(true).required(true))
+        )
         .subcommand(SubCommand::with_name("server"))
         .get_matches();
 
-    let (cmd, matches) = matches.subcommand();
 
-    let path = matches.unwrap().value_of("path").unwrap();
+    let (cmd, cmd_matches) = matches.subcommand();
+    let cmd_matches = cmd_matches.unwrap();
 
     match cmd {
-        "bench" => manual_test(path),
+        "bench" => manual_test(
+            cmd_matches.value_of("path").unwrap(),
+            cmd_matches.value_of("sql").unwrap(),
+            cmd_matches.value_of("iterations").unwrap().parse::<usize>().unwrap()
+        ),
         "server" => run_query_server(),
         _ => println!("???")
     }
@@ -70,36 +77,31 @@ fn run_query_server() {
         .launch();
 }
 
-fn manual_test(path: &str) {
-    let partitions = visit_dirs(&Path::new(path)).unwrap();
-    execute_query(&partitions);
+fn manual_test(path: &str, sql: &str, iterations: usize) {
+    for i in 0..iterations {
+        let partitions = visit_dirs(&Path::new(path)).unwrap();
+        execute_query(&partitions, sql);
+    }
 }
 
-fn execute_query(partitions: &Vec<String>) {
-
-    let sql = "SELECT passenger_count, \
-               MIN(fare_amount), \
-               MAX(fare_amount)\
-               FROM tripdata \
-               GROUP BY passenger_count";
+fn execute_query(partitions: &Vec<String>, sql: &str) {
 
     let now = Instant::now();
 
     let mut handles = vec![];
     for path in partitions {
         let path = path.to_string();
+        let sql = sql.to_string();
         handles.push(thread::spawn(move || {
-            execute_aggregate(&path, sql).unwrap().unwrap()
+            execute_aggregate(&path, &sql).unwrap().unwrap()
         }));
     }
 
     // wait for all threads to finish
     for handle in handles {
         let batch = handle.join().unwrap();
-        show_batch(&batch);
+        //show_batch(&batch);
     }
-
-
 
     //TODO aggregate the results
 
