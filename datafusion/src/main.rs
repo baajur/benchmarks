@@ -79,14 +79,17 @@ fn run_query_server() {
 
 fn manual_test(path: &str, sql: &str, iterations: usize) {
     for i in 0..iterations {
+        let now = Instant::now();
         let partitions = visit_dirs(&Path::new(path)).unwrap();
         execute_query(&partitions, sql);
+        let duration = now.elapsed();
+        let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
+        println!("Iteration {} took {} seconds", i+1, seconds);
     }
 }
 
 fn execute_query(partitions: &Vec<String>, sql: &str) {
 
-    let now = Instant::now();
 
     let mut handles = vec![];
     for path in partitions {
@@ -105,10 +108,6 @@ fn execute_query(partitions: &Vec<String>, sql: &str) {
 
     //TODO aggregate the results
 
-    let duration = now.elapsed();
-    let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
-
-    println!("Query took {} seconds", seconds);
 }
 
 fn visit_dirs(dir: &Path) -> io::Result<Vec<String>> {

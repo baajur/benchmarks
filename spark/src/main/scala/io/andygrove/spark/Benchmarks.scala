@@ -13,7 +13,7 @@ object Benchmarks {
 
     loadParquet(spark, path)
 
-    val durations = for (i <- 1 until iterations) yield {
+    val durations = for (i <- 1 to iterations) yield {
       println(s"**** Running iteration $i")
       val t1 = System.currentTimeMillis()
       spark.sql(sql).collect().foreach(println)
