@@ -5,10 +5,9 @@ authors = ["Andy Grove <andygrove73@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-arrow = "0.14.1"
-parquet = "0.14.1"
-datafusion = "0.14.1"
-parquet-format = "< 2.6.0"
+arrow = { git = "https://github.com/apache/arrow" }
+parquet = { git = "https://github.com/apache/arrow" }
+datafusion = { git = "https://github.com/apache/arrow" }
 clap = "2.33.0"
 rocket = "0.4.0"
 rocket_codegen = "0.4.0"

@@ -81,6 +81,7 @@ fn manual_test(path: &str, sql: &str, iterations: usize) {
     for i in 0..iterations {
         let now = Instant::now();
         let partitions = visit_dirs(&Path::new(path)).unwrap();
+        println!("Found {} partitions", partitions.len());
         execute_query(&partitions, sql);
         let duration = now.elapsed();
         let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
@@ -103,7 +104,7 @@ fn execute_query(partitions: &Vec<String>, sql: &str) {
     // wait for all threads to finish
     for handle in handles {
         let batch = handle.join().unwrap();
-        //show_batch(&batch);
+        show_batch(&batch);
     }
 
     //TODO aggregate the results
