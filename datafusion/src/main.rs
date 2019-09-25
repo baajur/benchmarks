@@ -83,11 +83,12 @@ fn manual_test(path: &str, sql: &str, iterations: usize) -> Result<()> {
 
         let mut ctx = ExecutionContext::new();
         ctx.register_parquet("tripdata", path)?;
-        let result = ctx.sql(&sql, 1024)?;
-        let mut ref_mut = result.borrow_mut();
-        while let Some(batch) = ref_mut.next()? {
-            show_batch(&batch);
-        }
+
+        let plan = ctx.create_logical_plan(sql)?;
+        let plan = ctx.optimize(&plan)?;
+        let plan = ctx.create_physical_plan(&plan, 1024)?;
+        let results = ctx.collect(plan.as_ref())?;
+        results.iter().for_each(show_batch);
 
         let duration = now.elapsed();
         let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
