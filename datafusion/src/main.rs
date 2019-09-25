@@ -37,8 +37,8 @@ struct Query {
 
 #[post("/", data = "<query>")]
 fn query(_context: State<QueryContext>, query: Json<Query>) -> String {
-    let partitions = visit_dirs(&Path::new(&query.path)).unwrap();
-    execute_query(&partitions, &query.sql);
+//    let partitions = visit_dirs(&Path::new(&query.path)).unwrap();
+//    execute_query(&partitions, &query.sql);
     "Hello, world!".to_string()
 }
 
@@ -63,7 +63,7 @@ fn main() {
             cmd_matches.value_of("path").unwrap(),
             cmd_matches.value_of("sql").unwrap(),
             cmd_matches.value_of("iterations").unwrap().parse::<usize>().unwrap()
-        ),
+        ).unwrap(),
         "server" => run_query_server(),
         _ => println!("???")
     }
@@ -77,90 +77,26 @@ fn run_query_server() {
         .launch();
 }
 
-fn manual_test(path: &str, sql: &str, iterations: usize) {
+fn manual_test(path: &str, sql: &str, iterations: usize) -> Result<()> {
     for i in 0..iterations {
         let now = Instant::now();
-        let partitions = visit_dirs(&Path::new(path)).unwrap();
-        println!("Found {} partitions", partitions.len());
-        execute_query(&partitions, sql);
+
+        let mut ctx = ExecutionContext::new();
+        ctx.register_parquet("tripdata", path)?;
+        let result = ctx.sql(&sql, 1024)?;
+        let mut ref_mut = result.borrow_mut();
+        while let Some(batch) = ref_mut.next()? {
+            show_batch(&batch);
+        }
+
         let duration = now.elapsed();
         let seconds = duration.as_secs() as f64 + (duration.subsec_nanos() as f64 / 1000000000.0);
         println!("Iteration {} took {} seconds", i+1, seconds);
     }
+
+    Ok(())
 }
 
-fn execute_query(partitions: &Vec<String>, sql: &str) {
-
-
-    let mut handles = vec![];
-    for path in partitions {
-        let path = path.to_string();
-        let sql = sql.to_string();
-        handles.push(thread::spawn(move || {
-            execute_aggregate(&path, &sql).unwrap().unwrap()
-        }));
-    }
-
-    // wait for all threads to finish
-    for handle in handles {
-        let batch = handle.join().unwrap();
-        show_batch(&batch);
-    }
-
-    //TODO aggregate the results
-
-}
-
-fn visit_dirs(dir: &Path) -> io::Result<Vec<String>> {
-    let mut files: Vec<String> = vec![];
-    if dir.is_dir() {
-        let entries = fs::read_dir(dir)?;
-        let mut success = false;
-        for entry in entries {
-            let entry = entry?;
-            let path = entry.path().into_os_string().into_string().unwrap();
-            if path.ends_with("_SUCCESS") {
-                success = true;
-                break;
-            }
-        }
-
-        let entries = fs::read_dir(dir)?;
-        for entry in entries {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
-                let mut dir_files = visit_dirs(&path)?;
-                files.append(&mut dir_files);
-            } else {
-                if success {
-                    let path = entry.path().into_os_string().into_string().unwrap();
-                    if path.ends_with(".parquet") {
-                        files.push(path);
-                    }
-                }
-            }
-        }
-    }
-    Ok(files)
-}
-
-/// Execute an aggregate query on a single parquet file
-fn execute_aggregate(path: &str, sql: &str) -> Result<Option<RecordBatch>> {
-
-    // create execution context
-    let mut ctx = ExecutionContext::new();
-
-    ctx.register_table("tripdata", Rc::new(ParquetTable::try_new(path).unwrap()));
-
-    // create a data frame
-    let result = ctx.sql(&sql, 1024).unwrap();
-
-    let mut ref_mut = result.borrow_mut();
-    let batch = ref_mut.next();
-
-    batch
-}
 
 fn show_batch(batch: &RecordBatch) {
     for row in 0..batch.num_rows() {
