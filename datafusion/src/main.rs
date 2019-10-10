@@ -84,9 +84,11 @@ fn manual_test(path: &str, sql: &str, iterations: usize) -> Result<()> {
         let mut ctx = ExecutionContext::new();
         ctx.register_parquet("tripdata", path)?;
 
+        let batch_size = 1024 * 1024;
+
         let plan = ctx.create_logical_plan(sql)?;
         let plan = ctx.optimize(&plan)?;
-        let plan = ctx.create_physical_plan(&plan, 1024)?;
+        let plan = ctx.create_physical_plan(&plan, batch_size)?;
         let results = ctx.collect(plan.as_ref())?;
         results.iter().for_each(show_batch);
 
