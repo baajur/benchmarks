@@ -5,9 +5,9 @@ authors = ["Andy Grove <andygrove73@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-arrow = { git = "https://github.com/apache/arrow" }
-parquet = { git = "https://github.com/apache/arrow" }
-datafusion = { git = "https://github.com/apache/arrow" }
+arrow = { git = "https://github.com/andygrove/arrow", branch = "ARROW-6690" }
+parquet = { git = "https://github.com/andygrove/arrow", branch = "ARROW-6690" }
+datafusion = { git = "https://github.com/andygrove/arrow", branch = "ARROW-6690" }
 clap = "2.33.0"
 rocket = "0.4.0"
 rocket_codegen = "0.4.0"
