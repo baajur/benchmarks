@@ -5,14 +5,13 @@ authors = ["Andy Grove <andygrove73@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+arrow = { git = "https://github.com/apache/arrow" }
+parquet = { git = "https://github.com/apache/arrow"}
+datafusion = { git = "https://github.com/apache/arrow" }
 
-#arrow = { git = "https://github.com/apache/arrow" }
-#parquet = { git = "https://github.com/apache/arrow"}
-#datafusion = { git = "https://github.com/apache/arrow" }
-
-arrow = { path = "../../arrow/rust/arrow" }
-parquet = { path = "../../arrow/rust/parquet" }
-datafusion = { path = "../../arrow/rust/datafusion" }
+#arrow = { path = "../../arrow/rust/arrow" }
+#parquet = { path = "../../arrow/rust/parquet" }
+#datafusion = { path = "../../arrow/rust/datafusion" }
 
 clap = "2.33.0"
 rocket = "0.4.0"

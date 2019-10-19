@@ -1,5 +1,12 @@
 # DataFusion Benchmarks
 
+## Running from Docker image
+
+```bash
+./build-docker-image.sh
+docker run --cpus="12" --memory="8g" -v /mnt/ssd/nyc_taxis:/mnt/nyctaxi -it andygrove/nyctaxi-datafusion cargo run --release -- bench --format parquet --path /mnt/nyctaxi/parquet/2018 --sql "SELECT passenger_count, MIN(fare_amount), MAX(fare_amount) FROM tripdata GROUP BY passenger_count" --iterations 5
+```
+
 ## Parquet
 
 ```bash
