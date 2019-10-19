@@ -14,10 +14,9 @@ use std::fs;
 use std::path::Path;
 
 use arrow::array::{Float64Array, Int32Array, UInt32Array};
-use arrow::datatypes::DataType;
+use arrow::datatypes::{Schema, Field, DataType, TimeUnit};
 
 use arrow::record_batch::RecordBatch;
-use datafusion::datasource::parquet::ParquetTable;
 use datafusion::error::Result;
 use datafusion::execution::context::ExecutionContext;
 
@@ -47,6 +46,7 @@ fn main() {
     let matches = App::new("DataFusion Benchmarks")
         .author("Andy Grove")
         .subcommand(SubCommand::with_name("bench")
+            .arg(Arg::with_name("format").long("format").takes_value(true).required(true))
             .arg(Arg::with_name("sql").long("sql").takes_value(true).required(true))
             .arg(Arg::with_name("path").long("path").takes_value(true).required(true))
             .arg(Arg::with_name("iterations").long("iterations").takes_value(true).required(true))
@@ -60,6 +60,7 @@ fn main() {
 
     match cmd {
         "bench" => manual_test(
+            cmd_matches.value_of("format").unwrap(),
             cmd_matches.value_of("path").unwrap(),
             cmd_matches.value_of("sql").unwrap(),
             cmd_matches.value_of("iterations").unwrap().parse::<usize>().unwrap()
@@ -77,12 +78,42 @@ fn run_query_server() {
         .launch();
 }
 
-fn manual_test(path: &str, sql: &str, iterations: usize) -> Result<()> {
+fn manual_test(format: &str, path: &str, sql: &str, iterations: usize) -> Result<()> {
+
     for i in 0..iterations {
         let now = Instant::now();
 
         let mut ctx = ExecutionContext::new();
-        ctx.register_parquet("tripdata", path)?;
+
+        match format {
+            "parquet" => ctx.register_parquet("tripdata", path)?,
+            "csv" => {
+
+                let schema = Schema::new(vec![
+                    Field::new("VendorID", DataType::Int32, true),
+                    Field::new("tpep_pickup_datetime", DataType::Timestamp(TimeUnit::Second), true),
+                    Field::new("tpep_dropoff_datetime", DataType::Timestamp(TimeUnit::Second), true),
+                    Field::new("passenger_count", DataType::Int32, true),
+                    Field::new("trip_distance", DataType::Float64, true),
+                    Field::new("RatecodeID", DataType::Int32, true),
+                    Field::new("store_and_fwd_flag", DataType::Utf8, true),
+                    Field::new("PULocationID", DataType::Int32, true),
+                    Field::new("DOLocationID", DataType::Int32, true),
+                    Field::new("payment_type", DataType::Int32, true),
+                    Field::new("fare_amount", DataType::Float64, true),
+                    Field::new("extra", DataType::Float64, true),
+                    Field::new("mta_tax", DataType::Float64, true),
+                    Field::new("tip_amount", DataType::Float64, true),
+                    Field::new("tolls_amount", DataType::Float64, true),
+                    Field::new("improvement_surcharge", DataType::Float64, true),
+                    Field::new("total_amount", DataType::Float64, true),
+                ]);
+
+                ctx.register_csv("tripdata", path, &schema, true);
+            },
+            _ => panic!("Invalid format")
+        }
+
 
         let batch_size = 1024 * 1024;
 
