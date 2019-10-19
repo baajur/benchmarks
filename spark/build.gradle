@@ -32,7 +32,7 @@ dependencies {
         exclude group: 'org.slf4j', module: 'log4j-over-slf4j'
     }
 
-    implementation('org.apache.spark:spark-sql_2.12:2.4.1') {
+    implementation('org.apache.spark:spark-sql_2.12:2.4.4') {
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
     }
 
