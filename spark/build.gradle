@@ -12,7 +12,6 @@ apply plugin: 'application'
 
 application {
     mainClassName = 'io.andygrove.spark.Main'
-    applicationDefaultJvmArgs = ["-Xms8g", "-Xmx8g"]
 }
 
 // In this section you declare where to find the dependencies of your project

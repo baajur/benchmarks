@@ -9,7 +9,7 @@ object Benchmarks {
 
     val spark: SparkSession = SparkSession.builder
       .appName(this.getClass.getName)
-      .master("local[*]")
+      .master("local[*]") // use as many threads as needed
       .getOrCreate()
 
     format match {
