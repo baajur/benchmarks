@@ -1,26 +1,10 @@
-# Apache Spark Benchmarks
+# Apache Spark Benchmarks for NYC trip data
 
-```
-root
- |-- vendor_id: string (nullable = true)
- |-- pickup_datetime: timestamp (nullable = true)
- |-- dropoff_datetime: timestamp (nullable = true)
- |-- passenger_count: integer (nullable = true)
- |-- trip_distance: double (nullable = true)
- |-- pickup_longitude: double (nullable = true)
- |-- pickup_latitude: double (nullable = true)
- |-- rate_code: integer (nullable = true)
- |-- store_and_fwd_flag: string (nullable = true)
- |-- dropoff_longitude: double (nullable = true)
- |-- dropoff_latitude: double (nullable = true)
- |-- payment_type: string (nullable = true)
- |-- fare_amount: double (nullable = true)
- |-- surcharge: double (nullable = true)
- |-- mta_tax: double (nullable = true)
- |-- tip_amount: double (nullable = true)
- |-- tolls_amount: double (nullable = true)
- |-- total_amount: double (nullable = true)
+## Running from Docker
 
+```bash
+./build-docker-image.sh
+docker run --cpus="12" --memory="8g" -v /mnt/ssd/nyc_taxis:/mnt/nyctaxi -it andygrove/nyctaxi-spark ./bin/spark-benchmarks bench parquet /mnt/nyctaxi/parquet/2018 "SELECT passenger_count, MIN(fare_amount), MAX(fare_amount) FROM tripdata GROUP BY passenger_count" 5
 ```
 
 ## Convert single CSV to Parquet
@@ -31,7 +15,7 @@ Converts a single CSV file to a Parquet file.
 ./gradlew run --args='convert yellow_tripdata_2010-01.csv yellow_tripdata_2010-01.parquet'
 ```
 
-## Run in-process benchmark
+## Run benchmarks with Gradle
 
 ### Parquet
 
