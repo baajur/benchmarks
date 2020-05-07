@@ -1,0 +1,9 @@
+[package]
+name = "tool"
+version = "0.1.0"
+authors = ["Andy Grove <andygrove73@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+plotlib = "0.5.1"
+csv = "1.1.3"
