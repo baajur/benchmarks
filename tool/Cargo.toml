@@ -5,5 +5,6 @@ authors = ["Andy Grove <andygrove73@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-plotlib = "0.5.1"
+#plotters = { git = "https://github.com/38/plotters.git" }
+plotters = { git = "https://github.com/38/plotters.git", default_features = false, features = ["svg", "line_series", "point_series"] }
 csv = "1.1.3"
