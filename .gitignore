@@ -5,6 +5,5 @@
 target
 metastore_db
 perf.*
-*.svg
 callgrind*
 *.lock
