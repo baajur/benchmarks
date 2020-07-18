@@ -17,6 +17,7 @@ use std::time::Instant;
 
 extern crate ballista;
 
+use ballista::arrow::datatypes::{Schema, Field, DataType};
 use ballista::arrow::record_batch::RecordBatch;
 use ballista::arrow::util::pretty;
 use ballista::dataframe::{max, Context};
@@ -75,9 +76,13 @@ async fn main() -> Result<()> {
 /// 	l_linestatus;
 ///
 async fn q1(ctx: &Context, path: &str) -> Result<Vec<RecordBatch>> {
-    let options = CsvReadOptions::new().delimiter(b'|');
+    let schema = lineitem_schema();
+    let options = CsvReadOptions::new().delimiter(b'|').schema(&schema);
+
+    // TODO this is WIP and not the real query yet
+
     ctx.read_csv(path, options, None)?
-        .filter(col("l_shipdate").lt(&lit_str("1998-12-01")))? // should be l_shipdate <= date '1998-12-01' - interval ':1' day (3)
+       // .filter(col("l_shipdate").lt(&lit_str("1998-12-01")))? // should be l_shipdate <= date '1998-12-01' - interval ':1' day (3)
         .aggregate(
             vec![col("l_returnflag"), col("l_linestatus")],
             vec![
@@ -86,11 +91,33 @@ async fn q1(ctx: &Context, path: &str) -> Result<Vec<RecordBatch>> {
                 max(col("l_extendedprice")), // should be sum(l_extendedprice * (1 - l_discount)) as sum_disc_price
                 max(col("l_quantity")), // should be sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge
                 max(col("l_quantity")), // should be avg(l_quantity) as avg_qty
-                max(col("l_quantity")), // should be avg(l_extendedprice) as avg_price
-                max(col("l_quantity")), // should be avg(l_discount) as avg_disc
+                max(col("l_extendedprice")), // should be avg(l_extendedprice) as avg_price
+                max(col("l_discount")), // should be avg(l_discount) as avg_disc
                 max(col("l_quantity")), // should be count(*) as count_order
             ],
         )?
+        //.sort()?
         .collect()
         .await
+}
+
+fn lineitem_schema() -> Schema {
+    Schema::new(vec![
+        Field::new("l_orderkey", DataType::Utf8, true),
+        Field::new("l_partkey", DataType::Utf8, true),
+        Field::new("l_suppkey", DataType::Utf8, true),
+        Field::new("l_linenumber", DataType::Utf8, true),
+        Field::new("l_quantity", DataType::Utf8, true),
+        Field::new("l_extendedprice", DataType::Utf8, true),
+        Field::new("l_discount", DataType::Utf8, true),
+        Field::new("l_tax", DataType::Utf8, true),
+        Field::new("l_returnflag", DataType::Utf8, true),
+        Field::new("l_linestatus", DataType::Utf8, true),
+        Field::new("l_shipdate", DataType::Utf8, true),
+        Field::new("l_commitdate", DataType::Utf8, true),
+        Field::new("l_receiptdate", DataType::Utf8, true),
+        Field::new("l_shipinstruct", DataType::Utf8, true),
+        Field::new("l_shipmode", DataType::Utf8, true),
+        Field::new("l_comment", DataType::Utf8, true),
+    ])
 }
