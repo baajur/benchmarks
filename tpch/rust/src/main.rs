@@ -16,29 +16,29 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 extern crate ballista;
+
+use ballista::arrow::record_batch::RecordBatch;
 use ballista::arrow::util::pretty;
 use ballista::dataframe::{max, Context};
+use ballista::datafusion::datasource::csv::CsvReadOptions;
 use ballista::datafusion::logicalplan::*;
 use ballista::error::Result;
-use ballista::BALLISTA_VERSION;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("Ballista v{} Distributed Query Example", BALLISTA_VERSION);
-
     //TODO use command-line args
-    let nyc_taxi_path = "/mnt/nyctaxi/parquet/year=2019";
+    let path = "/mnt/tpch/100/lineitem";
     let executor_host = "localhost";
     let executor_port = 50051;
+    let query_no = 1;
 
     let start = Instant::now();
     let ctx = Context::remote(executor_host, executor_port, HashMap::new());
 
-    let results = ctx
-        .read_parquet(nyc_taxi_path, None)?
-        .aggregate(vec![col("passenger_count")], vec![max(col("fare_amount"))])?
-        .collect()
-        .await?;
+    let results = match query_no {
+        1 => q1(&ctx, path).await?,
+        _ => unimplemented!(),
+    };
 
     // print the results
     pretty::print_batches(&results)?;
@@ -46,4 +46,51 @@ async fn main() -> Result<()> {
     println!("Distributed query took {} ms", start.elapsed().as_millis());
 
     Ok(())
+}
+
+/// TPCH Query 1.
+///
+/// The full SQL is:
+///
+/// select
+/// 	l_returnflag,
+/// 	l_linestatus,
+/// 	sum(l_quantity) as sum_qty,
+/// 	sum(l_extendedprice) as sum_base_price,
+/// 	sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,
+/// 	sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
+/// 	avg(l_quantity) as avg_qty,
+/// 	avg(l_extendedprice) as avg_price,
+/// 	avg(l_discount) as avg_disc,
+/// 	count(*) as count_order
+/// from
+/// 	lineitem
+/// where
+/// 	l_shipdate <= date '1998-12-01' - interval ':1' day (3)
+/// group by
+/// 	l_returnflag,
+/// 	l_linestatus
+/// order by
+/// 	l_returnflag,
+/// 	l_linestatus;
+///
+async fn q1(ctx: &Context, path: &str) -> Result<Vec<RecordBatch>> {
+    let options = CsvReadOptions::new().delimiter(b'|');
+    ctx.read_csv(path, options, None)?
+        .filter(col("l_shipdate").lt(&lit_str("1998-12-01")))? // should be l_shipdate <= date '1998-12-01' - interval ':1' day (3)
+        .aggregate(
+            vec![col("l_returnflag"), col("l_linestatus")],
+            vec![
+                max(col("l_quantity")),      // should be sum(l_quantity) as sum_qty
+                max(col("l_extendedprice")), // should be sum(l_extendedprice) as sum_base_price
+                max(col("l_extendedprice")), // should be sum(l_extendedprice * (1 - l_discount)) as sum_disc_price
+                max(col("l_quantity")), // should be sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge
+                max(col("l_quantity")), // should be avg(l_quantity) as avg_qty
+                max(col("l_quantity")), // should be avg(l_extendedprice) as avg_price
+                max(col("l_quantity")), // should be avg(l_discount) as avg_disc
+                max(col("l_quantity")), // should be count(*) as count_order
+            ],
+        )?
+        .collect()
+        .await
 }
