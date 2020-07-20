@@ -17,12 +17,11 @@ use std::time::Instant;
 
 extern crate ballista;
 
-use ballista::arrow::datatypes::{Schema, Field, DataType};
+use ballista::arrow::datatypes::{DataType, Field, Schema};
 use ballista::arrow::record_batch::RecordBatch;
 use ballista::arrow::util::pretty;
-use ballista::dataframe::{max, Context};
+use ballista::dataframe::*;
 use ballista::datafusion::datasource::csv::CsvReadOptions;
-use ballista::datafusion::logicalplan::*;
 use ballista::error::Result;
 
 #[tokio::main]
@@ -82,18 +81,31 @@ async fn q1(ctx: &Context, path: &str) -> Result<Vec<RecordBatch>> {
     // TODO this is WIP and not the real query yet
 
     ctx.read_csv(path, options, None)?
-       // .filter(col("l_shipdate").lt(&lit_str("1998-12-01")))? // should be l_shipdate <= date '1998-12-01' - interval ':1' day (3)
+        // .filter(col("l_shipdate").lt(&lit_str("1998-12-01")))? // should be l_shipdate <= date '1998-12-01' - interval ':1' day (3)
+        .project(vec![
+            col("l_quantity"),
+            col("l_extendedprice"),
+            col("l_discount"),
+            col("l_returnflag"),
+            col("l_linestatus"),
+            subtract(&lit_f64(1_f64), &col("l_discount")).alias("one_minus_l_discount"),
+        ])?
         .aggregate(
             vec![col("l_returnflag"), col("l_linestatus")],
             vec![
-                max(col("l_quantity")),      // should be sum(l_quantity) as sum_qty
-                max(col("l_extendedprice")), // should be sum(l_extendedprice) as sum_base_price
-                max(col("l_extendedprice")), // should be sum(l_extendedprice * (1 - l_discount)) as sum_disc_price
-                max(col("l_quantity")), // should be sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge
-                max(col("l_quantity")), // should be avg(l_quantity) as avg_qty
-                max(col("l_extendedprice")), // should be avg(l_extendedprice) as avg_price
-                max(col("l_discount")), // should be avg(l_discount) as avg_disc
-                max(col("l_quantity")), // should be count(*) as count_order
+                sum(col("l_quantity")).alias("sum_qty"),
+                sum(col("l_extendedprice").alias("sum_base_price")),
+                sum(mult(&col("l_extendedprice"), &col("one_minus_l_discount")))
+                    .alias("sum_disc_price"),
+                sum(mult(
+                    &mult(&col("l_extendedprice"), &col("one_minus_l_discount")),
+                    &add(&lit_f64(1_f64), &col("l_tax")),
+                ))
+                .alias("sum_charge"),
+                avg(col("l_quantity")).alias("avg_qty"),
+                avg(col("l_extendedprice")).alias("avg_price"),
+                avg(col("l_discount")).alias("avg_disc"),
+                count(col("l_quantity")).alias("count_order"), // should be count(*) not count(col)
             ],
         )?
         //.sort()?
