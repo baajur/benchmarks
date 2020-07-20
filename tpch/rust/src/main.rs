@@ -103,14 +103,14 @@ async fn q1(ctx: &Context, path: &str) -> Result<Vec<RecordBatch>> {
 
 fn lineitem_schema() -> Schema {
     Schema::new(vec![
-        Field::new("l_orderkey", DataType::Utf8, true),
-        Field::new("l_partkey", DataType::Utf8, true),
-        Field::new("l_suppkey", DataType::Utf8, true),
-        Field::new("l_linenumber", DataType::Utf8, true),
-        Field::new("l_quantity", DataType::Utf8, true),
-        Field::new("l_extendedprice", DataType::Utf8, true),
-        Field::new("l_discount", DataType::Utf8, true),
-        Field::new("l_tax", DataType::Utf8, true),
+        Field::new("l_orderkey", DataType::UInt32, true),
+        Field::new("l_partkey", DataType::UInt32, true),
+        Field::new("l_suppkey", DataType::UInt32, true),
+        Field::new("l_linenumber", DataType::UInt32, true),
+        Field::new("l_quantity", DataType::Float64, true),
+        Field::new("l_extendedprice", DataType::Float64, true),
+        Field::new("l_discount", DataType::Float64, true),
+        Field::new("l_tax", DataType::Float64, true),
         Field::new("l_returnflag", DataType::Utf8, true),
         Field::new("l_linestatus", DataType::Utf8, true),
         Field::new("l_shipdate", DataType::Utf8, true),
