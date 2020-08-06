@@ -27,7 +27,7 @@ use ballista::error::Result;
 #[tokio::main]
 async fn main() -> Result<()> {
     //TODO use command-line args
-    let path = "/mnt/tpch/100/lineitem";
+    let path = "/mnt/tpch/100-partitioned/lineitem";
     let executor_host = "localhost";
     let executor_port = 50051;
     let query_no = 1;
@@ -82,23 +82,15 @@ async fn q1(ctx: &Context, path: &str) -> Result<Vec<RecordBatch>> {
 
     ctx.read_csv(path, options, None)?
         // .filter(col("l_shipdate").lt(&lit_str("1998-12-01")))? // should be l_shipdate <= date '1998-12-01' - interval ':1' day (3)
-        .project(vec![
-            col("l_quantity"),
-            col("l_extendedprice"),
-            col("l_discount"),
-            col("l_returnflag"),
-            col("l_linestatus"),
-            subtract(&lit_f64(1_f64), &col("l_discount")).alias("one_minus_l_discount"),
-        ])?
         .aggregate(
             vec![col("l_returnflag"), col("l_linestatus")],
             vec![
                 sum(col("l_quantity")).alias("sum_qty"),
                 sum(col("l_extendedprice").alias("sum_base_price")),
-                sum(mult(&col("l_extendedprice"), &col("one_minus_l_discount")))
+                sum(mult(&col("l_extendedprice"), &subtract(&lit_f64(1_f64), &col("l_discount"))))
                     .alias("sum_disc_price"),
                 sum(mult(
-                    &mult(&col("l_extendedprice"), &col("one_minus_l_discount")),
+                    &mult(&col("l_extendedprice"), &subtract(&lit_f64(1_f64), &col("l_discount"))),
                     &add(&lit_f64(1_f64), &col("l_tax")),
                 ))
                 .alias("sum_charge"),
