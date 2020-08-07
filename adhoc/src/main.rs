@@ -5,13 +5,39 @@ use std::thread;
 use std::time::Instant;
 
 use arrow::array::{Float64Array, StringArray};
-use arrow::record_batch::{RecordBatch, RecordBatchReader};
+use arrow::record_batch::RecordBatchReader;
 use datafusion::execution::physical_plan::common;
 use parquet::arrow::arrow_reader::ArrowReader;
 use parquet::arrow::ParquetFileArrowReader;
 use parquet::file::reader::SerializedFileReader;
 use std::collections::HashMap;
 
+/// TPCH Query 1.
+///
+/// The full SQL is:
+///
+/// select
+///     l_returnflag,
+///     l_linestatus,
+///     sum(l_quantity) as sum_qty,
+///     sum(l_extendedprice) as sum_base_price,
+///     sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,
+///     sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
+///     avg(l_quantity) as avg_qty,
+///     avg(l_extendedprice) as avg_price,
+///     avg(l_discount) as avg_disc,
+///     count(*) as count_order
+/// from
+///     lineitem
+/// where
+///     l_shipdate <= date '1998-12-01' - interval ':1' day (3)
+/// group by
+///     l_returnflag,
+///     l_linestatus
+/// order by
+///     l_returnflag,
+///     l_linestatus;
+///
 #[tokio::main]
 async fn main() -> Result<(), String> {
     let start = Instant::now();
@@ -31,13 +57,26 @@ async fn main() -> Result<(), String> {
         worker_threads.push(thread::spawn(move || partial_agg(&filenames)));
     }
 
+    let mut final_agg: HashMap<AggrKey, Accumulators> = HashMap::new();
     for handle in worker_threads {
         let result = handle.join().unwrap();
         //TODO final agg
         let partial_agg = result.unwrap();
         for (k, v) in &partial_agg {
-            println!("{:?} = {:?}", k, v);
+            match final_agg.get_mut(k) {
+                Some(accum) => do_final_accum(accum, v),
+                None => {
+                    let mut accum = Accumulators::new();
+                    do_final_accum(&mut accum, v);
+                    final_agg.insert(k.clone(), accum);
+                }
+            }
         }
+    }
+
+    //TODO final sort
+    for (k, v) in &final_agg {
+        println!("{:?} = {:?}", k, v);
     }
 
     println!(
@@ -65,6 +104,26 @@ fn partial_agg(filenames: &Vec<String>) -> Result<HashMap<AggrKey, Accumulators>
             .unwrap();
 
         while let Some(batch) = batch_reader.next_batch().unwrap() {
+            let l_quantity = batch
+                .column(0)
+                .as_any()
+                .downcast_ref::<Float64Array>()
+                .expect("l_quantity");
+            let l_extendedprice = batch
+                .column(1)
+                .as_any()
+                .downcast_ref::<Float64Array>()
+                .expect("l_extendedprice");
+            let l_discount = batch
+                .column(2)
+                .as_any()
+                .downcast_ref::<Float64Array>()
+                .expect("l_discount");
+            let l_tax = batch
+                .column(3)
+                .as_any()
+                .downcast_ref::<Float64Array>()
+                .expect("l_tax");
             let l_returnflag = batch
                 .column(4)
                 .as_any()
@@ -77,22 +136,23 @@ fn partial_agg(filenames: &Vec<String>) -> Result<HashMap<AggrKey, Accumulators>
                 .expect("l_linestatus");
 
             for row in 0..batch.num_rows() {
+                //TODO filter
+
                 let key = AggrKey {
                     l_returnflag: l_returnflag.value(row).to_owned(),
                     l_linestatus: l_linestatus.value(row).to_owned(),
                 };
+
+                let extended_price = l_extendedprice.value(row);
+                let discount = l_discount.value(row);
+                let tax = l_tax.value(row);
+                let qty = l_quantity.value(row);
+
                 match map.get_mut(&key) {
-                    Some(accum) => do_accum(&batch, row, accum),
+                    Some(accum) => do_partial_accum(extended_price, discount, tax, qty, accum),
                     None => {
-                        let mut accum = Accumulators {
-                            sum_qty: 0.0,
-                            sum_base_price: 0.0,
-                            sum_discount: 0.0,
-                            sum_disc_price: 0.0,
-                            sum_charge: 0.0,
-                            count_order: 0,
-                        };
-                        do_accum(&batch, row, &mut accum);
+                        let mut accum = Accumulators::new();
+                        do_partial_accum(extended_price, discount, tax, qty, &mut accum);
                         map.insert(key, accum);
                     }
                 }
@@ -103,40 +163,31 @@ fn partial_agg(filenames: &Vec<String>) -> Result<HashMap<AggrKey, Accumulators>
     Ok(map)
 }
 
-fn do_accum(batch: &RecordBatch, row: usize, accum: &mut Accumulators) {
-    let l_quantity = batch
-        .column(0)
-        .as_any()
-        .downcast_ref::<Float64Array>()
-        .expect("l_quantity");
-    let l_extendedprice = batch
-        .column(1)
-        .as_any()
-        .downcast_ref::<Float64Array>()
-        .expect("l_extendedprice");
-    let l_discount = batch
-        .column(2)
-        .as_any()
-        .downcast_ref::<Float64Array>()
-        .expect("l_discount");
-    let l_tax = batch
-        .column(3)
-        .as_any()
-        .downcast_ref::<Float64Array>()
-        .expect("l_tax");
-
-    let extended_price = l_extendedprice.value(row);
-    let tax = l_tax.value(row);
-    let qty = l_quantity.value(row);
-    let discount_price = l_discount.value(row);
-    let disc_price = extended_price * (1_f64 - discount_price);
-
+fn do_partial_accum(
+    extended_price: f64,
+    discount: f64,
+    tax: f64,
+    qty: f64,
+    accum: &mut Accumulators,
+) {
+    let disc_price = extended_price * (1_f64 - discount);
     accum.sum_qty += qty;
+    accum.sum_tax += tax;
     accum.sum_base_price += extended_price;
-    accum.sum_discount += discount_price;
+    accum.sum_discount += discount;
     accum.sum_disc_price += disc_price;
     accum.sum_charge += disc_price * (1_f64 + tax);
     accum.count_order += 1;
+}
+
+fn do_final_accum(accum_final: &mut Accumulators, accum_partial: &Accumulators) {
+    accum_final.sum_qty += accum_partial.sum_qty;
+    accum_final.sum_tax += accum_partial.sum_tax;
+    accum_final.sum_base_price += accum_partial.sum_base_price;
+    accum_final.sum_discount += accum_partial.sum_discount;
+    accum_final.sum_disc_price += accum_partial.sum_disc_price;
+    accum_final.sum_charge += accum_partial.sum_charge;
+    accum_final.count_order += accum_partial.count_order;
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -152,7 +203,22 @@ struct Accumulators {
     sum_discount: f64,
     sum_disc_price: f64,
     sum_charge: f64,
+    sum_tax: f64,
     count_order: usize,
+}
+
+impl Accumulators {
+    fn new() -> Self {
+        Self {
+            sum_qty: 0.0,
+            sum_base_price: 0.0,
+            sum_discount: 0.0,
+            sum_disc_price: 0.0,
+            sum_charge: 0.0,
+            sum_tax: 0.0,
+            count_order: 0,
+        }
+    }
 }
 
 /*
