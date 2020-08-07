@@ -75,8 +75,21 @@ async fn main() -> Result<(), String> {
     }
 
     //TODO sort the final results
+
+    println!("l_returnflag, l_linestatus, sum_base_price, sum_disc_price, sum_charge, avg_qty, avg_price, avg_disc, count_order");
     for (k, v) in &final_agg {
-        println!("{:?} = {:?}", k, v);
+        println!(
+            "{}, {}, {}, {}, {}, {}, {}, {}, {}",
+            k.l_returnflag,
+            k.l_returnflag,
+            v.sum_base_price,
+            v.sum_disc_price,
+            v.sum_charge,
+            v.sum_qty / v.count_order as f64,
+            v.sum_discount / v.count_order as f64,
+            v.sum_qty / v.count_order as f64,
+            v.count_order,
+        );
     }
 
     println!(
@@ -88,7 +101,7 @@ async fn main() -> Result<(), String> {
 }
 
 fn partial_agg(filenames: &Vec<String>) -> Result<HashMap<AggrKey, Accumulators>, String> {
-    let batch_size = 1024 * 1024;
+    let batch_size = 64 * 1024;
     let parquet_buf_reader_size = 1024 * 1024;
     let projection: Vec<usize> = vec![4, 5, 6, 7, 8, 9];
 
