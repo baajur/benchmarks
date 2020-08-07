@@ -57,10 +57,10 @@ async fn main() -> Result<(), String> {
         worker_threads.push(thread::spawn(move || partial_agg(&filenames)));
     }
 
+    // collect the partial aggregates and combine them to get the final aggregate result
     let mut final_agg: HashMap<AggrKey, Accumulators> = HashMap::new();
     for handle in worker_threads {
         let result = handle.join().unwrap();
-        //TODO final agg
         let partial_agg = result.unwrap();
         for (k, v) in &partial_agg {
             match final_agg.get_mut(k) {
@@ -74,13 +74,13 @@ async fn main() -> Result<(), String> {
         }
     }
 
-    //TODO final sort
+    //TODO sort the final results
     for (k, v) in &final_agg {
         println!("{:?} = {:?}", k, v);
     }
 
     println!(
-        "Read {} files in {} ms",
+        "Processed {} files in {} ms",
         filenames.len(),
         start.elapsed().as_millis()
     );
@@ -88,7 +88,7 @@ async fn main() -> Result<(), String> {
 }
 
 fn partial_agg(filenames: &Vec<String>) -> Result<HashMap<AggrKey, Accumulators>, String> {
-    let batch_size = 64 * 1024;
+    let batch_size = 1024 * 1024;
     let parquet_buf_reader_size = 1024 * 1024;
     let projection: Vec<usize> = vec![4, 5, 6, 7, 8, 9];
 
@@ -136,7 +136,7 @@ fn partial_agg(filenames: &Vec<String>) -> Result<HashMap<AggrKey, Accumulators>
                 .expect("l_linestatus");
 
             for row in 0..batch.num_rows() {
-                //TODO filter
+                //TODO filter l_shipdate <= date '1998-12-01' - interval ':1' day (3)
 
                 let key = AggrKey {
                     l_returnflag: l_returnflag.value(row).to_owned(),
